@@ -1,0 +1,36 @@
+=== TEST 1: Duplicate Registration (User 5 in Hackathon 1) ===
+SQL: INSERT INTO registrations (hackathon_id, user_id, status) VALUES (1, 5, 'REGISTERED');
+Exit Code: 1
+Database Response: ERROR 1062 (23000) at line 1: Duplicate entry '1-5' for key 'registrations.uq_user_hackathon_reg'
+Result: REJECTED (EXPECTED)
+
+=== TEST 2: Duplicate Team Membership (User 5 in Team 1) ===
+SQL: INSERT INTO team_members (team_id, user_id, role_in_team) VALUES (1, 5, 'MEMBER');
+Exit Code: 1
+Database Response: ERROR 1062 (23000) at line 1: Duplicate entry '1-5' for key 'team_members.uq_team_member'
+Result: REJECTED (EXPECTED)
+
+=== TEST 3: Invalid Team Sizes (min_team_size = 5 > max_team_size = 2) ===
+SQL: INSERT INTO hackathons (organizer_id, title, description, start_date, end_date, registration_deadline, min_team_size, max_team_size, status) VALUES (2, 'Bad Size', 'Desc', '2026-11-01 09:00:00', '2026-11-03 18:00:00', '2026-10-25 23:59:59', 5, 2, 'UPCOMING');
+Exit Code: 1
+Database Response: ERROR 3819 (HY000) at line 1: Check constraint 'chk_team_sizes' is violated.
+Result: REJECTED (EXPECTED)
+
+=== TEST 4: Invalid Date Range (end_date < start_date) ===
+SQL: INSERT INTO hackathons (organizer_id, title, description, start_date, end_date, registration_deadline, min_team_size, max_team_size, status) VALUES (2, 'Bad Dates', 'Desc', '2026-11-10 09:00:00', '2026-11-05 18:00:00', '2026-11-02 23:59:59', 1, 4, 'UPCOMING');
+Exit Code: 1
+Database Response: ERROR 3819 (HY000) at line 1: Check constraint 'chk_dates' is violated.
+Result: REJECTED (EXPECTED)
+
+=== TEST 5: Foreign Key Violation (Non-existent user_id = 99999) ===
+SQL: INSERT INTO registrations (hackathon_id, user_id, status) VALUES (1, 99999, 'REGISTERED');
+Exit Code: 1
+Database Response: ERROR 1452 (23000) at line 1: Cannot add or update a child row: a foreign key constraint fails (`hackhub_db`.`registrations`, CONSTRAINT `fk_reg_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE)
+Result: REJECTED (EXPECTED)
+
+=== TEST 6: Duplicate Team Project Idea (Team 1 submitting 2nd idea for Hackathon 1) ===
+SQL: INSERT INTO project_ideas (hackathon_id, submitted_by_user_id, team_id, title, abstract, is_public, submission_status) VALUES (1, 5, 1, 'Duplicate Team Project', 'Desc', TRUE, 'SUBMITTED');
+Exit Code: 1
+Database Response: ERROR 1062 (23000) at line 1: Duplicate entry '1-1' for key 'project_ideas.uq_hackathon_team_idea'
+Result: REJECTED (EXPECTED)
+

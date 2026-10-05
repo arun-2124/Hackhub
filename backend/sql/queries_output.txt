@@ -1,0 +1,72 @@
+user_id	full_name	email	college_name	phone
+2	Dr. Ramesh Sharma	ramesh.sharma@mit.edu	MIT Department of Computer Science	+91 9876543210
+3	Prof. Priya Iyer	priya.iyer@iitb.ac.in	IIT Bombay Innovation & Entrepreneurship Cell	+91 9876543211
+4	Vikram Malhotra	vikram@techhub.org	National Coding Consortium	+91 9876543212
+hackathon_id	title	status	location	registration_deadline
+4	CyberShield National Hackathon	ONGOING	Online	2026-09-30 23:59:59
+1	AI Genesis Hackathon 2026	UPCOMING	Hybrid - MIT Campus & Online	2026-11-10 23:59:59
+hackathon_id	hackathon_title	start_date	end_date	location	organizer_name	organizer_email
+1	AI Genesis Hackathon 2026	2026-11-15 09:00:00	2026-11-17 18:00:00	Hybrid - MIT Campus & Online	Dr. Ramesh Sharma	ramesh.sharma@mit.edu
+2	Web3 & FinTech Revolution	2026-12-01 10:00:00	2026-12-03 20:00:00	Online (Discord & GitHub)	Prof. Priya Iyer	priya.iyer@iitb.ac.in
+6	EdTech Odyssey 2026	2026-12-15 09:00:00	2026-12-17 18:00:00	Online	Vikram Malhotra	vikram@techhub.org
+hackathon_id	hackathon_title	status	tags
+1	AI Genesis Hackathon 2026	UPCOMING	AI/ML, Cloud & DevOps, IoT & Robotics
+2	Web3 & FinTech Revolution	UPCOMING	CyberSecurity, FinTech, Web3 & Blockchain
+3	Smart Health & BioTech Sprint	ONGOING	AI/ML, HealthTech, IoT & Robotics
+4	CyberShield National Hackathon	ONGOING	Cloud & DevOps, CyberSecurity
+5	GreenTech Clean Energy Challenge	COMPLETED	CleanTech & Energy, IoT & Robotics
+6	EdTech Odyssey 2026	UPCOMING	AI/ML, EdTech, Mobile Apps
+hackathon_id	hackathon_title	status	total_registered_participants
+3	Smart Health & BioTech Sprint	ONGOING	5
+4	CyberShield National Hackathon	ONGOING	5
+1	AI Genesis Hackathon 2026	UPCOMING	4
+2	Web3 & FinTech Revolution	UPCOMING	4
+5	GreenTech Clean Energy Challenge	COMPLETED	2
+6	EdTech Odyssey 2026	UPCOMING	1
+hackathon_id	hackathon_title	registration_count
+3	Smart Health & BioTech Sprint	5
+4	CyberShield National Hackathon	5
+1	AI Genesis Hackathon 2026	4
+2	Web3 & FinTech Revolution	4
+total_hackathons	absolute_min_team_size	absolute_max_team_size	average_max_team_size
+6	1	5	3.83
+team_name	team_code	hackathon_name	member_name	member_email	role_in_team	joined_at
+BlockBusters	BB-W32026	Web3 & FinTech Revolution	Karan Joshi	karan.j@dtu.ac.in	MEMBER	2026-10-05 11:04:57
+BlockBusters	BB-W32026	Web3 & FinTech Revolution	Ananya Sen	ananya.sen@bits.ac.in	LEADER	2026-10-05 11:04:57
+CyberSentinels	CS-SEC2026	CyberShield National Hackathon	Diya Nair	diya.nair@nitc.ac.in	MEMBER	2026-10-05 11:04:57
+CyberSentinels	CS-SEC2026	CyberShield National Hackathon	Rohan Verma	rohan.v@vit.ac.in	LEADER	2026-10-05 11:04:57
+MediPulse	MP-HT2026	Smart Health & BioTech Sprint	Meera Krishnan	meera.k@pes.edu	MEMBER	2026-10-05 11:04:57
+MediPulse	MP-HT2026	Smart Health & BioTech Sprint	Siddharth Rao	sid.rao@iiit.ac.in	MEMBER	2026-10-05 11:04:57
+MediPulse	MP-HT2026	Smart Health & BioTech Sprint	Sneha Reddy	sneha.reddy@student.iitb.ac.in	LEADER	2026-10-05 11:04:57
+NeuralKnights	NK-AI2026	AI Genesis Hackathon 2026	Rohan Verma	rohan.v@vit.ac.in	MEMBER	2026-10-05 11:04:57
+NeuralKnights	NK-AI2026	AI Genesis Hackathon 2026	Sneha Reddy	sneha.reddy@student.iitb.ac.in	MEMBER	2026-10-05 11:04:57
+NeuralKnights	NK-AI2026	AI Genesis Hackathon 2026	Aarav Patel	aarav.patel@student.mit.edu	LEADER	2026-10-05 11:04:57
+idea_id	idea_title	domain_track	tech_stack	submission_status	submitted_by_entity	submitter_name	total_files_attached
+1	NeuroScribe – Automated Clinical Notes via Whisper & LLMs	AI/ML	Python, PyTorch, Whisper, React, FastAPI	ACCEPTED	NeuralKnights	Aarav Patel	2
+idea_id	title	domain_track	tech_stack	hackathon_title	author_or_team	attachments_count
+1	NeuroScribe – Automated Clinical Notes via Whisper & LLMs	AI/ML	Python, PyTorch, Whisper, React, FastAPI	AI Genesis Hackathon 2026	NeuralKnights	2
+2	DecentraPay – Cross-Border Micropayments on Layer-2	FinTech	Solidity, Polygon zkEVM, Next.js, Node.js	Web3 & FinTech Revolution	BlockBusters	1
+4	PhishGuard – Zero-Day Email Threat Engine	CyberSecurity	Python, Rust, Scikit-learn, Docker	CyberShield National Hackathon	Kabir Das	1
+5	SolarSync – Peer-to-Peer Solar Surplus Energy Exchange	CleanTech & Energy	React, Express, ESP32, MQTT, MySQL	GreenTech Clean Energy Challenge	Tanvi Hegde	2
+7	BioSentinel – Non-Invasive Early Sepsis Warning Monitor	HealthTech	Python, XGBoost, Docker, Flask	Smart Health & BioTech Sprint	Karan Joshi	1
+team_id	team_name	team_code	hackathon_name	leader_name
+4	CyberSentinels	CS-SEC2026	CyberShield National Hackathon	Rohan Verma
+user_id	full_name	email	college_name	total_hackathons_registered
+5	Aarav Patel	aarav.patel@student.mit.edu	MIT Pune	3
+8	Ananya Sen	ananya.sen@bits.ac.in	BITS Pilani	3
+10	Diya Nair	diya.nair@nitc.ac.in	NIT Calicut	2
+9	Karan Joshi	karan.j@dtu.ac.in	Delhi Technological University	2
+12	Meera Krishnan	meera.k@pes.edu	PES University Bengaluru	2
+7	Rohan Verma	rohan.v@vit.ac.in	VIT Vellore	2
+11	Siddharth Rao	sid.rao@iiit.ac.in	IIIT Hyderabad	2
+6	Sneha Reddy	sneha.reddy@student.iitb.ac.in	IIT Bombay	2
+14	Tanvi Hegde	tanvi.h@manipal.edu	Manipal Institute of Technology	2
+user_id	full_name	email	college_name
+2	Dr. Ramesh Sharma	ramesh.sharma@mit.edu	MIT Department of Computer Science
+3	Prof. Priya Iyer	priya.iyer@iitb.ac.in	IIT Bombay Innovation & Entrepreneurship Cell
+4	Vikram Malhotra	vikram@techhub.org	National Coding Consortium
+hackathon_id	title	registrations
+3	Smart Health & BioTech Sprint	5
+4	CyberShield National Hackathon	5
+1	AI Genesis Hackathon 2026	4
+2	Web3 & FinTech Revolution	4

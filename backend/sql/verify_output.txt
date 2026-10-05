@@ -1,0 +1,259 @@
+Tables_in_hackhub_db
+announcements
+hackathon_tag_mappings
+hackathon_tags
+hackathons
+project_ideas
+registrations
+submission_files
+team_members
+teams
+users
+Field	Type	Null	Key	Default	Extra
+user_id	int unsigned	NO	PRI	NULL	auto_increment
+full_name	varchar(100)	NO		NULL	
+email	varchar(150)	NO	UNI	NULL	
+password_hash	varchar(255)	NO		NULL	
+role	enum('PARTICIPANT','ORGANIZER','ADMIN')	NO	MUL	PARTICIPANT	
+college_name	varchar(150)	YES		NULL	
+phone	varchar(20)	YES		NULL	
+created_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+updated_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+Field	Type	Null	Key	Default	Extra
+hackathon_id	int unsigned	NO	PRI	NULL	auto_increment
+organizer_id	int unsigned	NO	MUL	NULL	
+title	varchar(200)	NO		NULL	
+description	text	NO		NULL	
+banner_image	varchar(255)	YES		NULL	
+start_date	datetime	NO	MUL	NULL	
+end_date	datetime	NO		NULL	
+registration_deadline	datetime	NO		NULL	
+min_team_size	tinyint unsigned	NO		1	
+max_team_size	tinyint unsigned	NO		4	
+status	enum('UPCOMING','ONGOING','COMPLETED','CANCELLED')	NO	MUL	UPCOMING	
+location	varchar(150)	NO		Online	
+created_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+updated_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+Field	Type	Null	Key	Default	Extra
+tag_id	int unsigned	NO	PRI	NULL	auto_increment
+tag_name	varchar(50)	NO	UNI	NULL	
+Field	Type	Null	Key	Default	Extra
+hackathon_id	int unsigned	NO	PRI	NULL	
+tag_id	int unsigned	NO	PRI	NULL	
+Field	Type	Null	Key	Default	Extra
+registration_id	int unsigned	NO	PRI	NULL	auto_increment
+hackathon_id	int unsigned	NO	MUL	NULL	
+user_id	int unsigned	NO	MUL	NULL	
+registration_date	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+status	enum('REGISTERED','CONFIRMED','CANCELLED')	NO		REGISTERED	
+Field	Type	Null	Key	Default	Extra
+team_id	int unsigned	NO	PRI	NULL	auto_increment
+hackathon_id	int unsigned	NO	MUL	NULL	
+leader_id	int unsigned	NO	MUL	NULL	
+team_name	varchar(100)	NO		NULL	
+team_code	varchar(12)	NO	UNI	NULL	
+created_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+Field	Type	Null	Key	Default	Extra
+membership_id	int unsigned	NO	PRI	NULL	auto_increment
+team_id	int unsigned	NO	MUL	NULL	
+user_id	int unsigned	NO	MUL	NULL	
+role_in_team	enum('LEADER','MEMBER')	NO		MEMBER	
+joined_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+Field	Type	Null	Key	Default	Extra
+idea_id	int unsigned	NO	PRI	NULL	auto_increment
+hackathon_id	int unsigned	NO	MUL	NULL	
+submitted_by_user_id	int unsigned	NO	MUL	NULL	
+team_id	int unsigned	YES	MUL	NULL	
+title	varchar(200)	NO		NULL	
+abstract	text	NO		NULL	
+domain_track	varchar(100)	YES		NULL	
+tech_stack	varchar(255)	YES		NULL	
+demo_url	varchar(255)	YES		NULL	
+repo_url	varchar(255)	YES		NULL	
+is_public	tinyint(1)	NO	MUL	0	
+submission_status	enum('SUBMITTED','UNDER_REVIEW','ACCEPTED','REJECTED')	NO	MUL	SUBMITTED	
+submitted_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+updated_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+Field	Type	Null	Key	Default	Extra
+file_id	int unsigned	NO	PRI	NULL	auto_increment
+idea_id	int unsigned	NO	MUL	NULL	
+file_type	enum('PPT','PDF')	NO		NULL	
+file_name	varchar(255)	NO		NULL	
+original_name	varchar(255)	NO		NULL	
+file_path	varchar(255)	NO		NULL	
+file_size_bytes	int unsigned	NO		NULL	
+uploaded_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+Field	Type	Null	Key	Default	Extra
+announcement_id	int unsigned	NO	PRI	NULL	auto_increment
+hackathon_id	int unsigned	NO	MUL	NULL	
+posted_by	int unsigned	NO	MUL	NULL	
+title	varchar(200)	NO		NULL	
+content	text	NO		NULL	
+is_pinned	tinyint(1)	NO		0	
+created_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+*************************** 1. row ***************************
+       Table: users
+Create Table: CREATE TABLE `users` (
+  `user_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` enum('PARTICIPANT','ORGANIZER','ADMIN') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PARTICIPANT',
+  `college_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_user_role` (`role`),
+  KEY `idx_user_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: hackathons
+Create Table: CREATE TABLE `hackathons` (
+  `hackathon_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `organizer_id` int unsigned NOT NULL,
+  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `banner_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `registration_deadline` datetime NOT NULL,
+  `min_team_size` tinyint unsigned NOT NULL DEFAULT '1',
+  `max_team_size` tinyint unsigned NOT NULL DEFAULT '4',
+  `status` enum('UPCOMING','ONGOING','COMPLETED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UPCOMING',
+  `location` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Online',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hackathon_id`),
+  KEY `fk_hackathon_organizer` (`organizer_id`),
+  KEY `idx_hackathon_status` (`status`),
+  KEY `idx_hackathon_dates` (`start_date`,`end_date`),
+  CONSTRAINT `fk_hackathon_organizer` FOREIGN KEY (`organizer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `chk_dates` CHECK (((`end_date` >= `start_date`) and (`registration_deadline` <= `end_date`))),
+  CONSTRAINT `chk_team_sizes` CHECK (((`min_team_size` > 0) and (`max_team_size` >= `min_team_size`)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: hackathon_tags
+Create Table: CREATE TABLE `hackathon_tags` (
+  `tag_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tag_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`tag_id`),
+  UNIQUE KEY `tag_name` (`tag_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: hackathon_tag_mappings
+Create Table: CREATE TABLE `hackathon_tag_mappings` (
+  `hackathon_id` int unsigned NOT NULL,
+  `tag_id` int unsigned NOT NULL,
+  PRIMARY KEY (`hackathon_id`,`tag_id`),
+  KEY `fk_htm_tag` (`tag_id`),
+  CONSTRAINT `fk_htm_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`hackathon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_htm_tag` FOREIGN KEY (`tag_id`) REFERENCES `hackathon_tags` (`tag_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: registrations
+Create Table: CREATE TABLE `registrations` (
+  `registration_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `hackathon_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `registration_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('REGISTERED','CONFIRMED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REGISTERED',
+  PRIMARY KEY (`registration_id`),
+  UNIQUE KEY `uq_user_hackathon_reg` (`hackathon_id`,`user_id`),
+  KEY `idx_reg_user` (`user_id`),
+  KEY `idx_reg_hackathon` (`hackathon_id`),
+  CONSTRAINT `fk_reg_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`hackathon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_reg_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: teams
+Create Table: CREATE TABLE `teams` (
+  `team_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `hackathon_id` int unsigned NOT NULL,
+  `leader_id` int unsigned NOT NULL,
+  `team_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `team_code` varchar(12) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`team_id`),
+  UNIQUE KEY `team_code` (`team_code`),
+  UNIQUE KEY `uq_hackathon_team_name` (`hackathon_id`,`team_name`),
+  KEY `fk_team_leader` (`leader_id`),
+  KEY `idx_team_hackathon` (`hackathon_id`),
+  CONSTRAINT `fk_team_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`hackathon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_team_leader` FOREIGN KEY (`leader_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: team_members
+Create Table: CREATE TABLE `team_members` (
+  `membership_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `team_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `role_in_team` enum('LEADER','MEMBER') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'MEMBER',
+  `joined_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`membership_id`),
+  UNIQUE KEY `uq_team_member` (`team_id`,`user_id`),
+  KEY `idx_tm_user` (`user_id`),
+  KEY `idx_tm_team` (`team_id`),
+  CONSTRAINT `fk_tm_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_tm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: project_ideas
+Create Table: CREATE TABLE `project_ideas` (
+  `idea_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `hackathon_id` int unsigned NOT NULL,
+  `submitted_by_user_id` int unsigned NOT NULL,
+  `team_id` int unsigned DEFAULT NULL,
+  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `abstract` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `domain_track` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tech_stack` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `demo_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `repo_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_public` tinyint(1) NOT NULL DEFAULT '0',
+  `submission_status` enum('SUBMITTED','UNDER_REVIEW','ACCEPTED','REJECTED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'SUBMITTED',
+  `submitted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idea_id`),
+  UNIQUE KEY `uq_hackathon_team_idea` (`hackathon_id`,`team_id`),
+  KEY `fk_idea_submitter` (`submitted_by_user_id`),
+  KEY `fk_idea_team` (`team_id`),
+  KEY `idx_idea_public` (`is_public`),
+  KEY `idx_idea_status` (`submission_status`),
+  KEY `idx_idea_hackathon` (`hackathon_id`),
+  CONSTRAINT `fk_idea_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`hackathon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_idea_submitter` FOREIGN KEY (`submitted_by_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_idea_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`team_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: submission_files
+Create Table: CREATE TABLE `submission_files` (
+  `file_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `idea_id` int unsigned NOT NULL,
+  `file_type` enum('PPT','PDF') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_size_bytes` int unsigned NOT NULL,
+  `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`file_id`),
+  KEY `idx_file_idea` (`idea_id`),
+  CONSTRAINT `fk_sf_idea` FOREIGN KEY (`idea_id`) REFERENCES `project_ideas` (`idea_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+*************************** 1. row ***************************
+       Table: announcements
+Create Table: CREATE TABLE `announcements` (
+  `announcement_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `hackathon_id` int unsigned NOT NULL,
+  `posted_by` int unsigned NOT NULL,
+  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_pinned` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`announcement_id`),
+  KEY `fk_ann_poster` (`posted_by`),
+  KEY `idx_ann_hackathon` (`hackathon_id`,`is_pinned`),
+  CONSTRAINT `fk_ann_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`hackathon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_ann_poster` FOREIGN KEY (`posted_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
