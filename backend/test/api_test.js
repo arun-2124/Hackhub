@@ -484,6 +484,19 @@ async function runTests() {
     console.error('Fatal Test Exception:', error);
     failed++;
   } finally {
+    try {
+      const pool = require('../config/db');
+      if (testHackathonId) {
+        await pool.query('DELETE FROM hackathons WHERE hackathon_id = ?', [testHackathonId]);
+      }
+      await pool.query("DELETE FROM users WHERE email LIKE 'testuser_%' OR email LIKE 'unreg_%'");
+      // Also delete temporary sample pdf
+      const samplePdf = path.join(__dirname, 'sample_test_doc.pdf');
+      if (fs.existsSync(samplePdf)) fs.unlinkSync(samplePdf);
+    } catch (cleanupErr) {
+      console.warn('api_test cleanup warning:', cleanupErr.message);
+    }
+
     console.log('\n======================================================');
     console.log(`🏁 TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
     console.log('======================================================\n');

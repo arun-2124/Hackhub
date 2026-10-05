@@ -31,6 +31,14 @@ async function runComprehensiveVerification() {
   console.log('🧪 HACKHUB COMPREHENSIVE REST API VERIFICATION SUITE (PHASE 4)');
   console.log('================================================================\n');
 
+  let quantumHackathonId = null;
+  let orgEmail = null;
+  let studentEmail = null;
+  let student2Email = null;
+  let student3Email = null;
+  let student4Email = null;
+  let unregStudentEmail = null;
+
   try {
     // -------------------------------------------------------------
     // MODULE 1: SERVER & DATABASE CONNECTIVITY
@@ -73,7 +81,7 @@ async function runComprehensiveVerification() {
     console.log('\n--- MODULE 2: Authentication & Password Security ---');
 
     // 2a. Register Participant
-    const studentEmail = `student_${Date.now()}@test.edu`;
+    studentEmail = `student_${Date.now()}@test.edu`;
     const regPartRes = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -96,7 +104,7 @@ async function runComprehensiveVerification() {
     const studentUserId = regPartData.data.user.user_id;
 
     // 2b. Register Organizer
-    const orgEmail = `organizer_${Date.now()}@test.edu`;
+    orgEmail = `organizer_${Date.now()}@test.edu`;
     const regOrgRes = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -273,7 +281,7 @@ async function runComprehensiveVerification() {
       'RBAC',
       'Organizer 1 creates their own hackathon successfully'
     );
-    const quantumHackathonId = org1HackData.data.hackathon_id;
+    quantumHackathonId = org1HackData.data.hackathon_id;
 
     // 3c. Organizer 1 updates their own event
     const org1UpdateRes = await fetch(`${BASE_URL}/hackathons/${quantumHackathonId}`, {
@@ -526,7 +534,7 @@ async function runComprehensiveVerification() {
     console.log('\n--- MODULE 6: Teams, Transactions & Capacity Validation ---');
 
     // Create a 2nd participant to test team interactions
-    const student2Email = `student2_${Date.now()}@test.edu`;
+    student2Email = `student2_${Date.now()}@test.edu`;
     const regPart2 = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -655,7 +663,7 @@ async function runComprehensiveVerification() {
 
     // 6g. Capacity limit test: Max team size for Quantum Hackathon is 3.
     // Register Student 3 and join (size becomes 3)
-    const student3Email = `student3_${Date.now()}@test.edu`;
+    student3Email = `student3_${Date.now()}@test.edu`;
     const regPart3 = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -674,7 +682,7 @@ async function runComprehensiveVerification() {
     });
 
     // Register Student 4 and attempt to join full team (size = 3 >= max_team_size = 3)
-    const student4Email = `student4_${Date.now()}@test.edu`;
+    student4Email = `student4_${Date.now()}@test.edu`;
     const regPart4 = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1166,6 +1174,22 @@ async function runComprehensiveVerification() {
     console.error('Fatal Exception in Comprehensive Verification:', error);
     failedCount++;
   } finally {
+    try {
+      if (quantumHackathonId) {
+        await pool.query('DELETE FROM hackathons WHERE hackathon_id = ?', [quantumHackathonId]);
+      }
+      const testEmails = [orgEmail, studentEmail, student2Email, student3Email, student4Email, unregStudentEmail].filter(Boolean);
+      if (testEmails.length > 0) {
+        await pool.query('DELETE FROM users WHERE email IN (?)', [testEmails]);
+      }
+      const testPdf = path.join(__dirname, 'test_deck.pdf');
+      const testPptx = path.join(__dirname, 'test_deck.pptx');
+      if (fs.existsSync(testPdf)) fs.unlinkSync(testPdf);
+      if (fs.existsSync(testPptx)) fs.unlinkSync(testPptx);
+    } catch (cleanupErr) {
+      console.warn('comprehensive_verification cleanup warning:', cleanupErr.message);
+    }
+
     console.log('\n================================================================');
     console.log(`🏁 COMPREHENSIVE VERIFICATION COMPLETE:`);
     console.log(`   TOTAL TESTS: ${passedCount + failedCount}`);
