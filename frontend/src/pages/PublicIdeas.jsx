@@ -33,7 +33,8 @@ export default function PublicIdeas() {
         if (track) params.track = track;
 
         const res = await ideaService.getPublicIdeas(params);
-        setIdeas(res.data?.ideas || []);
+        const ideaList = Array.isArray(res.data) ? res.data : (res.data?.ideas || res.ideas || []);
+        setIdeas(ideaList);
       } catch (err) {
         console.error('Failed to load public ideas:', err);
       } finally {

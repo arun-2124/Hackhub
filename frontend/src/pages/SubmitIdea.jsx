@@ -61,9 +61,10 @@ export default function SubmitIdea() {
           hackathonService.getHackathonById(hackathonId),
           registrationService.getMyRegistrations(),
         ]);
-        setHackathons(hRes.data?.hackathon || null);
+        setHackathons(hRes.data?.hackathon || hRes.data || null);
 
-        const reg = regRes.data?.registrations?.some(
+        const regList = Array.isArray(regRes.data) ? regRes.data : (regRes.data?.registrations || regRes.registrations || []);
+        const reg = regList.some(
           (r) => Number(r.hackathon_id) === Number(hackathonId)
         );
         setIsRegistered(reg);
@@ -71,7 +72,7 @@ export default function SubmitIdea() {
         if (reg) {
           try {
             const teamRes = await teamService.getMyTeam(hackathonId);
-            setTeam(teamRes.data?.team || null);
+            setTeam(teamRes.data?.team || teamRes.data || null);
           } catch (e) {
             setTeam(null);
           }

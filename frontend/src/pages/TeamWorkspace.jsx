@@ -44,11 +44,12 @@ export default function TeamWorkspace() {
     try {
       // 1. Check hackathon info
       const hRes = await hackathonService.getHackathonById(hackathonId);
-      setHackathons(hRes.data?.hackathon || null);
+      setHackathons(hRes.data?.hackathon || hRes.data || null);
 
       // 2. Check registration
       const regRes = await registrationService.getMyRegistrations();
-      const reg = regRes.data?.registrations?.some(
+      const regList = Array.isArray(regRes.data) ? regRes.data : (regRes.data?.registrations || regRes.registrations || []);
+      const reg = regList.some(
         (r) => Number(r.hackathon_id) === Number(hackathonId)
       );
       setIsRegistered(reg);
@@ -57,7 +58,7 @@ export default function TeamWorkspace() {
         // 3. Check if user already has a team
         try {
           const teamRes = await teamService.getMyTeam(hackathonId);
-          setTeam(teamRes.data?.team || null);
+          setTeam(teamRes.data?.team || teamRes.data || null);
         } catch (e) {
           // 404 means no team yet, which is expected
           setTeam(null);

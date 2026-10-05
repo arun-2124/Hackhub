@@ -17,7 +17,8 @@ export default function MyRegistrations() {
     setLoading(true);
     try {
       const res = await registrationService.getMyRegistrations();
-      setRegistrations(res.data?.registrations || []);
+      const regList = Array.isArray(res.data) ? res.data : (res.data?.registrations || res.registrations || []);
+      setRegistrations(regList);
     } catch (err) {
       setAlert({
         type: 'error',

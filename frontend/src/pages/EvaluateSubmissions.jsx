@@ -37,8 +37,8 @@ export default function EvaluateSubmissions() {
         hackathonService.getHackathonById(id),
         ideaService.getHackathonSubmissions(id),
       ]);
-      setHackathons(hRes.data?.hackathon || null);
-      setSubmissions(sRes.data?.submissions || []);
+      setHackathons(hRes.data?.hackathon || hRes.data || null);
+      setSubmissions(Array.isArray(sRes.data) ? sRes.data : (sRes.data?.submissions || []));
     } catch (err) {
       setAlert({
         type: 'error',

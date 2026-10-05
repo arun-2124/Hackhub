@@ -27,7 +27,10 @@ export default function CreateHackathon() {
 
   useEffect(() => {
     hackathonService.getTags()
-      .then((res) => setAvailableTags(res.data?.tags || []))
+      .then((res) => {
+        const tagList = Array.isArray(res.data) ? res.data : (res.data?.tags || res.tags || []);
+        setAvailableTags(tagList);
+      })
       .catch((err) => console.error('Failed to load tags:', err));
   }, []);
 
@@ -72,6 +75,7 @@ export default function CreateHackathon() {
         ...formData,
         min_team_size: Number(formData.min_team_size),
         max_team_size: Number(formData.max_team_size),
+        tag_ids: selectedTagIds,
         tags: selectedTagIds,
       };
 

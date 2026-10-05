@@ -234,9 +234,10 @@ const createHackathon = async (req, res, next) => {
 
     const newHackathonId = result.insertId;
 
-    // Attach tags if provided
-    if (Array.isArray(tag_ids) && tag_ids.length > 0) {
-      for (const tagId of tag_ids) {
+    // Attach tags if provided (supports tag_ids or tags)
+    const rawTags = (Array.isArray(tag_ids) && tag_ids.length > 0) ? tag_ids : (Array.isArray(req.body.tags) ? req.body.tags : []);
+    if (rawTags.length > 0) {
+      for (const tagId of rawTags) {
         await connection.query(
           'INSERT IGNORE INTO hackathon_tag_mappings (hackathon_id, tag_id) VALUES (?, ?)',
           [newHackathonId, tagId]

@@ -43,9 +43,9 @@ export default function ManageHackathon() {
         hackathonService.getHackathonParticipants(id),
         announcementService.getHackathonAnnouncements(id),
       ]);
-      setHackathons(hRes.data?.hackathon || null);
-      setParticipants(pRes.data?.participants || []);
-      setAnnouncements(aRes.data?.announcements || []);
+      setHackathons(hRes.data?.hackathon || hRes.data || null);
+      setParticipants(Array.isArray(pRes.data) ? pRes.data : (pRes.data?.participants || []));
+      setAnnouncements(Array.isArray(aRes.data) ? aRes.data : (aRes.data?.announcements || []));
     } catch (err) {
       setAlert({
         type: 'error',
@@ -77,7 +77,7 @@ export default function ManageHackathon() {
       setAnnContent('');
       // Refresh announcements
       const aRes = await announcementService.getHackathonAnnouncements(id);
-      setAnnouncements(aRes.data?.announcements || []);
+      setAnnouncements(Array.isArray(aRes.data) ? aRes.data : (aRes.data?.announcements || []));
     } catch (err) {
       setAlert({
         type: 'error',

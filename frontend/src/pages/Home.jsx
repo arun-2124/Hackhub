@@ -19,8 +19,10 @@ export default function Home() {
           hackathonService.getHackathons({ limit: 3 }),
           ideaService.getPublicIdeas({ limit: 3 }),
         ]);
-        setHackathons(hackRes.data?.hackathons || []);
-        setIdeas(ideaRes.data?.ideas || []);
+        const hackList = Array.isArray(hackRes.data) ? hackRes.data : (hackRes.data?.hackathons || hackRes.hackathons || []);
+        const ideaList = Array.isArray(ideaRes.data) ? ideaRes.data : (ideaRes.data?.ideas || ideaRes.ideas || []);
+        setHackathons(hackList);
+        setIdeas(ideaList);
       } catch (err) {
         console.error('Error fetching home data:', err);
       } finally {

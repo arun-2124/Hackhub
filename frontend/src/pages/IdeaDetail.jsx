@@ -31,7 +31,7 @@ export default function IdeaDetail() {
       setLoading(true);
       try {
         const res = await ideaService.getIdeaById(id);
-        setIdea(res.data?.idea || null);
+        setIdea(res.data?.idea || res.data || null);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load idea details.');
       } finally {

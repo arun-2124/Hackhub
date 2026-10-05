@@ -55,14 +55,16 @@ export default function HackathonDetail() {
           hackathonService.getHackathonById(id),
           announcementService.getHackathonAnnouncements(id),
         ]);
-        setHackathons(hackRes.data?.hackathon || null);
-        setAnnouncements(annRes.data?.announcements || []);
+        setHackathons(hackRes.data?.hackathon || hackRes.data || null);
+        const annList = Array.isArray(annRes.data) ? annRes.data : (annRes.data?.announcements || annRes.announcements || []);
+        setAnnouncements(annList);
 
         // Check if participant is registered
         if (isAuthenticated && user?.role === 'PARTICIPANT') {
           try {
             const regRes = await registrationService.getMyRegistrations();
-            const registered = regRes.data?.registrations?.some(
+            const regList = Array.isArray(regRes.data) ? regRes.data : (regRes.data?.registrations || regRes.registrations || []);
+            const registered = regList.some(
               (r) => Number(r.hackathon_id) === Number(id)
             );
             setIsRegistered(registered);

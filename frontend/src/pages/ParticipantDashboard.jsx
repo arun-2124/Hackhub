@@ -36,9 +36,11 @@ export default function ParticipantDashboard() {
           registrationService.getMyRegistrations(),
           ideaService.getMyIdeas(),
         ]);
-        setStats(statsRes.data?.stats || null);
-        setRegistrations(regRes.data?.registrations || []);
-        setIdeas(ideasRes.data?.ideas || []);
+        setStats(statsRes.data?.stats || statsRes.data || null);
+        const regList = Array.isArray(regRes.data) ? regRes.data : (regRes.data?.registrations || regRes.registrations || []);
+        const ideaList = Array.isArray(ideasRes.data) ? ideasRes.data : (ideasRes.data?.ideas || ideasRes.ideas || []);
+        setRegistrations(regList);
+        setIdeas(ideaList);
       } catch (err) {
         console.error('Error loading dashboard data:', err);
       } finally {

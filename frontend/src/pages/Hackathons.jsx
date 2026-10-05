@@ -18,7 +18,10 @@ export default function Hackathons() {
   useEffect(() => {
     // Fetch tags
     hackathonService.getTags()
-      .then((res) => setTags(res.data?.tags || []))
+      .then((res) => {
+        const tagList = Array.isArray(res.data) ? res.data : (res.data?.tags || res.tags || []);
+        setTags(tagList);
+      })
       .catch((err) => console.error('Failed to load tags:', err));
   }, []);
 
@@ -32,7 +35,8 @@ export default function Hackathons() {
         if (selectedTag) params.tag = selectedTag;
 
         const res = await hackathonService.getHackathons(params);
-        setHackathons(res.data?.hackathons || []);
+        const hackList = Array.isArray(res.data) ? res.data : (res.data?.hackathons || res.hackathons || []);
+        setHackathons(hackList);
       } catch (err) {
         console.error('Failed to load hackathons:', err);
       } finally {

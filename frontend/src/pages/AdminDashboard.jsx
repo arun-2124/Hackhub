@@ -24,7 +24,7 @@ export default function AdminDashboard() {
       setLoading(true);
       try {
         const res = await dashboardService.getAdminStats();
-        setStats(res.data?.stats || null);
+        setStats(res.data?.stats || res.data || null);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load system admin statistics.');
       } finally {

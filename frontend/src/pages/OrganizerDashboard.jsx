@@ -30,8 +30,9 @@ export default function OrganizerDashboard() {
           dashboardService.getOrganizerStats(),
           hackathonService.getMyHostedHackathons(),
         ]);
-        setStats(statsRes.data?.stats || null);
-        setHackathons(hRes.data?.hackathons || []);
+        setStats(statsRes.data?.stats || statsRes.data || null);
+        const hackList = Array.isArray(hRes.data) ? hRes.data : (hRes.data?.hackathons || hRes.hackathons || []);
+        setHackathons(hackList);
       } catch (err) {
         console.error('Failed to load organizer dashboard:', err);
       } finally {

@@ -43,7 +43,7 @@ export default function EditHackathon() {
           hackathonService.getTags(),
         ]);
 
-        const h = hRes.data?.hackathon;
+        const h = hRes.data?.hackathon || hRes.data;
         if (h) {
           setFormData({
             title: h.title || '',
@@ -60,7 +60,7 @@ export default function EditHackathon() {
           });
 
           // Match tags
-          const tags = tagsRes.data?.tags || [];
+          const tags = Array.isArray(tagsRes.data) ? tagsRes.data : (tagsRes.data?.tags || []);
           setAvailableTags(tags);
           if (h.tags && Array.isArray(h.tags)) {
             const matchedTagIds = tags
@@ -103,6 +103,7 @@ export default function EditHackathon() {
         ...formData,
         min_team_size: Number(formData.min_team_size),
         max_team_size: Number(formData.max_team_size),
+        tag_ids: selectedTagIds,
         tags: selectedTagIds,
       };
 

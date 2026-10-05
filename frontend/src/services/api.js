@@ -22,9 +22,39 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle Token Expiration & Errors
+// Response Interceptor: Handle Token Expiration, Normalization & Errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    const resBody = response.data;
+    if (resBody && typeof resBody === 'object' && resBody.data !== undefined) {
+      if (Array.isArray(resBody.data)) {
+        resBody.hackathons = resBody.data;
+        resBody.tags = resBody.data;
+        resBody.ideas = resBody.data;
+        resBody.submissions = resBody.data;
+        resBody.registrations = resBody.data;
+        resBody.announcements = resBody.data;
+        resBody.participants = resBody.data;
+        try {
+          resBody.data.hackathons = resBody.data;
+          resBody.data.tags = resBody.data;
+          resBody.data.ideas = resBody.data;
+          resBody.data.submissions = resBody.data;
+          resBody.data.registrations = resBody.data;
+          resBody.data.announcements = resBody.data;
+          resBody.data.participants = resBody.data;
+        } catch (_) {}
+      } else if (resBody.data && typeof resBody.data === 'object') {
+        try {
+          if (!resBody.data.hackathon) resBody.data.hackathon = resBody.data;
+          if (!resBody.data.idea) resBody.data.idea = resBody.data;
+          if (!resBody.data.team) resBody.data.team = resBody.data;
+          if (!resBody.data.user) resBody.data.user = resBody.data;
+        } catch (_) {}
+      }
+    }
+    return resBody;
+  },
   (error) => {
     const status = error.response ? error.response.status : null;
     const message =
