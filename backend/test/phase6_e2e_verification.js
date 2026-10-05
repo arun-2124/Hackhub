@@ -138,6 +138,7 @@ async function runEndToEndSuite() {
   let testIdeaId = null;
   let testFileId = null;
   let testAnnouncementId = null;
+  let unregStudentEmail = null;
 
   try {
     // ==========================================
@@ -454,7 +455,7 @@ async function runEndToEndSuite() {
     assert(dupRegRes.statusCode === 409, 'Duplicate hackathon registration rejected with HTTP 409');
 
     // 5.2 Join Team Without Registration
-    const unregStudentEmail = `unreg_${timestamp}@test.edu`;
+    unregStudentEmail = `unreg_${timestamp}@test.edu`;
     const unregStudentRes = await request('POST', '/auth/register', {
       full_name: 'Unregistered Student',
       email: unregStudentEmail,
@@ -521,6 +522,29 @@ async function runEndToEndSuite() {
 
     // Verify metadata was captured in MySQL
     assert(testFileId !== null && testFileId > 0, 'Submission file metadata record stored in MySQL submission_files table');
+
+    // ==========================================
+    // 7. CLEANUP TEMPORARY TEST DATA
+    // ==========================================
+    console.log('\n--- 7. CLEANUP TEMPORARY TEST ARTIFACTS ---');
+    try {
+      const pool = require('../config/db');
+      if (testIdeaId) {
+        await pool.query('DELETE FROM project_ideas WHERE idea_id = ?', [testIdeaId]);
+      }
+      if (testTeamId) {
+        await pool.query('DELETE FROM teams WHERE team_id = ?', [testTeamId]);
+      }
+      if (testHackathonId) {
+        await pool.query('DELETE FROM hackathons WHERE hackathon_id = ?', [testHackathonId]);
+      }
+      const testEmails = [testStudentEmail, unregStudentEmail].filter(Boolean);
+      if (testEmails.length > 0) {
+        await pool.query('DELETE FROM users WHERE email IN (?)', [testEmails]);
+      }
+    } catch (cleanupErr) {
+      console.warn('phase6 cleanup warning:', cleanupErr.message);
+    }
 
     // ==========================================
     // FINAL RESULTS SUMMARY

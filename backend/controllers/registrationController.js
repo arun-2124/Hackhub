@@ -86,13 +86,16 @@ const getMyRegistrations = async (req, res, next) => {
         h.end_date,
         h.status AS hackathon_status,
         h.location,
-        t.team_id,
-        t.team_name,
-        tm.role_in_team
+        tm_info.team_id,
+        tm_info.team_name,
+        tm_info.role_in_team
       FROM registrations r
       INNER JOIN hackathons h ON r.hackathon_id = h.hackathon_id
-      LEFT JOIN team_members tm ON tm.user_id = r.user_id
-      LEFT JOIN teams t ON tm.team_id = t.team_id AND t.hackathon_id = h.hackathon_id
+      LEFT JOIN (
+        SELECT t.hackathon_id, t.team_id, t.team_name, tm.user_id, tm.role_in_team
+        FROM teams t
+        JOIN team_members tm ON t.team_id = tm.team_id
+      ) tm_info ON tm_info.hackathon_id = r.hackathon_id AND tm_info.user_id = r.user_id
       WHERE r.user_id = ?
       ORDER BY r.registration_date DESC`,
       [userId]
