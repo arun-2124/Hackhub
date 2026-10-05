@@ -1,6 +1,13 @@
 const pool = require('../config/db');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
+function formatForMySQL(dateVal) {
+  if (!dateVal) return null;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return dateVal;
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 /**
  * List all hackathons with search, status filtering, tag filtering, and pagination
  * GET /api/v1/hackathons
@@ -216,9 +223,9 @@ const createHackathon = async (req, res, next) => {
         title.trim(),
         description.trim(),
         banner_image || null,
-        start_date,
-        end_date,
-        registration_deadline,
+        formatForMySQL(start_date),
+        formatForMySQL(end_date),
+        formatForMySQL(registration_deadline),
         min_team_size,
         max_team_size,
         location.trim()
@@ -303,9 +310,9 @@ const updateHackathon = async (req, res, next) => {
         title || null,
         description || null,
         banner_image || null,
-        start_date || null,
-        end_date || null,
-        registration_deadline || null,
+        formatForMySQL(start_date) || null,
+        formatForMySQL(end_date) || null,
+        formatForMySQL(registration_deadline) || null,
         min_team_size || null,
         max_team_size || null,
         status || null,

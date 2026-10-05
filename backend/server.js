@@ -61,4 +61,12 @@ const server = app.listen(PORT, () => {
   console.log(`[HackHub Server] Running on http://localhost:${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`[HackHub Server] Port ${PORT} already active. Reusing running instance.`);
+  } else {
+    throw err;
+  }
+});
+
 module.exports = { app, server };

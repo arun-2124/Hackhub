@@ -153,6 +153,7 @@ const getIdeaById = async (req, res, next) => {
       [ideaId]
     );
     idea.files = files;
+    idea.status = idea.submission_status;
 
     return successResponse(res, 200, 'Project idea retrieved.', idea);
   } catch (error) {
@@ -547,15 +548,17 @@ const updateIdea = async (req, res, next) => {
 const updateStatus = async (req, res, next) => {
   try {
     const ideaId = parseInt(req.params.id, 10);
-    const { submission_status } = req.body;
+    const rawStatus = req.body.submission_status || req.body.status;
     const userId = req.user.user_id;
 
-    if (isNaN(ideaId) || !submission_status) {
+    if (isNaN(ideaId) || !rawStatus) {
       return errorResponse(res, 400, 'Invalid parameters. submission_status is required.');
     }
 
     const validStatuses = ['SUBMITTED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED'];
-    const normalizedStatus = submission_status.toUpperCase().trim();
+    let normalizedStatus = rawStatus.toUpperCase().trim();
+    if (normalizedStatus === 'PENDING') normalizedStatus = 'SUBMITTED';
+
     if (!validStatuses.includes(normalizedStatus)) {
       return errorResponse(res, 400, `Invalid status. Must be one of: ${validStatuses.join(', ')}`);
     }

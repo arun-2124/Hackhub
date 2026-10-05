@@ -92,6 +92,7 @@ const createTeam = async (req, res, next) => {
       hackathon_id,
       team_name: team_name.trim(),
       team_code: teamCode,
+      invite_code: teamCode,
       role_in_team: 'LEADER'
     });
   } catch (error) {
@@ -110,11 +111,11 @@ const createTeam = async (req, res, next) => {
 const joinTeam = async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
-    const { team_code } = req.body;
+    const team_code = (req.body.team_code || req.body.invite_code || '').trim();
     const userId = req.user.user_id;
 
     if (!team_code) {
-      return errorResponse(res, 400, 'team_code is required.');
+      return errorResponse(res, 400, 'team_code or invite_code is required.');
     }
 
     await connection.beginTransaction();
@@ -244,6 +245,7 @@ const getTeamById = async (req, res, next) => {
     }
 
     const team = teams[0];
+    team.invite_code = team.team_code;
 
     // Fetch team members
     const [members] = await pool.query(

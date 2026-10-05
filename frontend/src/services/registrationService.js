@@ -5,6 +5,9 @@ export const registrationService = {
   register: async (hackathon_id) => {
     return await api.post('/registrations', { hackathon_id });
   },
+  registerForHackathon: async (hackathon_id) => {
+    return await api.post('/registrations', { hackathon_id });
+  },
 
   // Get logged-in participant registrations
   getMyRegistrations: async () => {
@@ -18,6 +21,9 @@ export const registrationService = {
 
   // Cancel registration
   cancel: async (registrationId) => {
+    return await api.delete(`/registrations/${registrationId}`);
+  },
+  cancelRegistration: async (registrationId) => {
     return await api.delete(`/registrations/${registrationId}`);
   }
 };
