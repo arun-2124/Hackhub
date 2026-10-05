@@ -43,11 +43,17 @@ export const ideaService = {
       const ideaId = res.data?.data?.idea_id || res.data?.idea_id || res.data?.data?.idea?.idea_id;
 
       if (file && ideaId) {
-        const uploadForm = new FormData();
-        uploadForm.append('file', file);
-        await api.post(`/ideas/${ideaId}/upload`, uploadForm, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        try {
+          const uploadForm = new FormData();
+          uploadForm.append('file', file);
+          await api.post(`/ideas/${ideaId}/upload`, uploadForm);
+        } catch (uploadErr) {
+          // Rollback newly created idea on upload failure to avoid leaving orphaned idea and blocking retry
+          try {
+            await api.delete(`/ideas/${ideaId}`);
+          } catch (_) {}
+          throw uploadErr;
+        }
       }
       return res;
     }
@@ -61,11 +67,7 @@ export const ideaService = {
   uploadFile: async (ideaId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return await api.post(`/ideas/${ideaId}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    return await api.post(`/ideas/${ideaId}/upload`, formData);
   },
 
   // Download file URL generator or helper

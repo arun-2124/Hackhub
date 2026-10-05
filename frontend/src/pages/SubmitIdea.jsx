@@ -150,7 +150,7 @@ export default function SubmitIdea() {
     } catch (err) {
       setAlert({
         type: 'error',
-        message: err.response?.data?.message || 'Submission failed. You may have already submitted an idea for this hackathon.',
+        message: err.message || err.response?.data?.message || 'Submission failed. Please check inputs and try again.',
       });
     } finally {
       setSubmitting(false);

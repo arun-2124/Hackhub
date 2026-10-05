@@ -648,6 +648,47 @@ const getHackathonSubmissions = async (req, res, next) => {
   }
 };
 
+/**
+ * Delete a project idea (Author or Admin)
+ * DELETE /api/v1/ideas/:id
+ */
+const deleteIdea = async (req, res, next) => {
+  try {
+    const ideaId = parseInt(req.params.id, 10);
+    const userId = req.user.user_id;
+
+    if (isNaN(ideaId)) {
+      return errorResponse(res, 400, 'Invalid idea ID.');
+    }
+
+    const [ideas] = await pool.query(
+      'SELECT idea_id, submitted_by_user_id FROM project_ideas WHERE idea_id = ?',
+      [ideaId]
+    );
+
+    if (ideas.length === 0) {
+      return errorResponse(res, 404, 'Project idea not found.');
+    }
+
+    if (ideas[0].submitted_by_user_id !== userId && req.user.role !== 'ADMIN') {
+      return errorResponse(res, 403, 'Forbidden: You do not have permission to delete this project idea.');
+    }
+
+    // Clean up physical file artifacts if present
+    const [files] = await pool.query('SELECT file_path FROM submission_files WHERE idea_id = ?', [ideaId]);
+    for (const f of files) {
+      if (f.file_path && fs.existsSync(f.file_path)) {
+        try { fs.unlinkSync(f.file_path); } catch (_) {}
+      }
+    }
+
+    await pool.query('DELETE FROM project_ideas WHERE idea_id = ?', [ideaId]);
+    return successResponse(res, 200, 'Project idea deleted successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPublicIdeas,
   getIdeaById,
@@ -656,5 +697,6 @@ module.exports = {
   downloadFile,
   updateIdea,
   updateStatus,
-  getHackathonSubmissions
+  getHackathonSubmissions,
+  deleteIdea
 };

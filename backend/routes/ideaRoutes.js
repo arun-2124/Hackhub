@@ -14,6 +14,7 @@ router.get('/:id', optionalAuth, ideaController.getIdeaById);
 router.post('/', verifyToken, ideaController.submitIdea);
 router.post('/:id/upload', verifyToken, upload.single('file'), ideaController.uploadSubmissionFile);
 router.put('/:id', verifyToken, ideaController.updateIdea);
+router.delete('/:id', verifyToken, ideaController.deleteIdea);
 
 // Review & Evaluation routes (Organizer or Admin)
 router.put('/:id/status', verifyToken, checkRole('ORGANIZER', 'ADMIN'), ideaController.updateStatus);

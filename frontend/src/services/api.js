@@ -10,12 +10,16 @@ const api = axios.create({
   }
 });
 
-// Request Interceptor: Attach JWT Bearer Token
+// Request Interceptor: Attach JWT Bearer Token & Support FormData
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('hackhub_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // If request payload is FormData, remove manual Content-Type header so browser sets multipart boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -72,7 +76,9 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(new Error(message));
+    const err = new Error(message);
+    err.response = error.response;
+    return Promise.reject(err);
   }
 );
 

@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
     'application/octet-stream' // Some browsers send binary stream for pptx
   ];
 
-  if (allowedExtensions.includes(ext) && (allowedMimeTypes.includes(file.mimetype) || ext === '.pptx' || ext === '.ppt')) {
+  if (allowedExtensions.includes(ext) && (allowedMimeTypes.includes(file.mimetype) || ext === '.pdf' || ext === '.pptx' || ext === '.ppt')) {
     cb(null, true);
   } else {
     cb(new Error('Invalid file type. Only PDF (.pdf) and PowerPoint (.ppt, .pptx) files are permitted.'), false);
