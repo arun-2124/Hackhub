@@ -377,7 +377,13 @@ async function runComprehensiveVerification() {
     const searchRes = await fetch(`${BASE_URL}/hackathons?search=Quantum`);
     const searchData = await searchRes.json();
     assert(
-      searchRes.status === 200 && searchData.data.length >= 1 && searchData.data[0].title.includes('Quantum'),
+      searchRes.status === 200 &&
+        searchData.data.length >= 1 &&
+        searchData.data.every(
+          (h) =>
+            h.title.toLowerCase().includes('quantum') ||
+            (h.description && h.description.toLowerCase().includes('quantum'))
+        ),
       'Hackathons',
       'Keyword search matches title/description correctly'
     );

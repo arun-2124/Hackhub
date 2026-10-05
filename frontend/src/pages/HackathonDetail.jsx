@@ -22,6 +22,8 @@ import {
   BookOpen,
   Send,
   UserCheck,
+  Globe,
+  Info,
 } from 'lucide-react';
 
 export default function HackathonDetail() {
@@ -119,6 +121,17 @@ export default function HackathonDetail() {
   const isOrganizerOwner =
     user?.role === 'ORGANIZER' && Number(user?.user_id) === Number(hackathon.organizer_id);
 
+  // Parse external source if embedded in description
+  const sourceMatch = hackathon?.description
+    ? hackathon.description.match(/\[Source:\s*([^\s|]+)\s*\|\s*([^\]]+)\]/)
+    : null;
+  const isExternal = Boolean(sourceMatch);
+  const sourcePlatform = sourceMatch ? sourceMatch[1] : null;
+  const sourceUrl = sourceMatch ? sourceMatch[2] : null;
+  const cleanDescription = hackathon?.description
+    ? hackathon.description.replace(/\[Source:[^\]]+\]/g, '').trim()
+    : '';
+
   return (
     <div className="space-y-8 py-6">
       {/* Back button */}
@@ -145,6 +158,12 @@ export default function HackathonDetail() {
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={hackathon.status} />
+              {isExternal && (
+                <span className="px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold rounded-full flex items-center shadow-xs">
+                  <Globe className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                  External • {sourcePlatform}
+                </span>
+              )}
               {hackathon.theme && (
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
                   {hackathon.theme}
@@ -172,7 +191,7 @@ export default function HackathonDetail() {
                     key={i}
                     className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100"
                   >
-                    #{tag}
+                    #{typeof tag === 'object' ? tag.tag_name : tag}
                   </span>
                 ))}
               </div>
@@ -228,6 +247,18 @@ export default function HackathonDetail() {
                 </p>
               </div>
             )}
+
+            {isExternal && sourceUrl && (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-xs rounded-xl flex items-center justify-center shadow-xs transition-colors text-center"
+              >
+                <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-amber-600 shrink-0" />
+                <span>Official Page ({sourcePlatform})</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -242,8 +273,30 @@ export default function HackathonDetail() {
               <BookOpen className="w-5 h-5 mr-2 text-indigo-600" /> About This Hackathon
             </h2>
             <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-              {hackathon.description || 'No description provided.'}
+              {cleanDescription || 'No description provided.'}
             </div>
+
+            {isExternal && (
+              <div className="mt-4 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-start space-x-3">
+                <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-900 leading-relaxed">
+                  <p className="font-semibold text-amber-950 mb-0.5">External Hackathon Notice ({sourcePlatform})</p>
+                  <p>
+                    This hackathon is imported from <strong>{sourcePlatform}</strong> for academic exploration and showcase. You can register and form your team on HackHub to collaborate and track submissions internally, and visit the official hackathon site for external participation guidelines.
+                  </p>
+                  {sourceUrl && (
+                    <a
+                      href={sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-amber-700 hover:text-amber-900 font-bold underline mt-2"
+                    >
+                      View official hackathon page on {sourcePlatform} <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Rules */}
