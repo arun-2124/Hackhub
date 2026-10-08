@@ -8,6 +8,8 @@ const upload = require('../middleware/uploadMiddleware');
 // Public and discoverable routes
 router.get('/public', ideaController.getPublicIdeas);
 router.get('/files/:fileId/download', optionalAuth, ideaController.downloadFile);
+router.get('/:id/files/:fileId/download', optionalAuth, ideaController.downloadFile);
+router.get('/:id/versions', optionalAuth, ideaController.getFileVersions);
 router.get('/:id', optionalAuth, ideaController.getIdeaById);
 
 // Submissions by participants
@@ -17,6 +19,7 @@ router.put('/:id', verifyToken, ideaController.updateIdea);
 router.delete('/:id', verifyToken, ideaController.deleteIdea);
 
 // Review & Evaluation routes (Organizer or Admin)
+router.post('/:id/evaluate', verifyToken, checkRole('ORGANIZER', 'ADMIN'), ideaController.evaluateSubmission);
 router.put('/:id/status', verifyToken, checkRole('ORGANIZER', 'ADMIN'), ideaController.updateStatus);
 router.get('/hackathon/:hackathonId', verifyToken, checkRole('ORGANIZER', 'ADMIN'), ideaController.getHackathonSubmissions);
 

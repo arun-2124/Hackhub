@@ -8,10 +8,20 @@ const { checkRole } = require('../middleware/roleMiddleware');
 router.get('/tags', hackathonController.getTags);
 router.get('/', hackathonController.getAllHackathons);
 router.get('/:id', hackathonController.getHackathonById);
+router.get('/:id/tracks', hackathonController.getHackathonTracks);
+router.get('/:id/schedule', hackathonController.getHackathonSchedule);
 
 // Protected routes (Organizer / Admin only)
 router.post('/', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.createHackathon);
 router.put('/:id', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.updateHackathon);
 router.delete('/:id', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.deleteHackathon);
+
+// Tracks and Schedule management
+router.post('/:id/tracks', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.addHackathonTrack);
+router.delete('/:id/tracks/:trackId', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.deleteHackathonTrack);
+
+router.post('/:id/schedule', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.addHackathonScheduleEvent);
+router.put('/:id/schedule/:scheduleId', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.updateHackathonScheduleEvent);
+router.delete('/:id/schedule/:scheduleId', verifyToken, checkRole('ORGANIZER', 'ADMIN'), hackathonController.deleteHackathonScheduleEvent);
 
 module.exports = router;

@@ -46,6 +46,31 @@ export const hackathonService = {
     return await api.delete(`/hackathons/${id}`);
   },
 
+  // Tracks
+  getTracks: async (hackathonId) => {
+    return await api.get(`/hackathons/${hackathonId}/tracks`);
+  },
+  addTrack: async (hackathonId, trackData) => {
+    return await api.post(`/hackathons/${hackathonId}/tracks`, trackData);
+  },
+  deleteTrack: async (hackathonId, trackId) => {
+    return await api.delete(`/hackathons/${hackathonId}/tracks/${trackId}`);
+  },
+
+  // Schedule & Meetings
+  getSchedule: async (hackathonId) => {
+    return await api.get(`/hackathons/${hackathonId}/schedule`);
+  },
+  addScheduleEvent: async (hackathonId, eventData) => {
+    return await api.post(`/hackathons/${hackathonId}/schedule`, eventData);
+  },
+  updateScheduleEvent: async (hackathonId, scheduleId, eventData) => {
+    return await api.put(`/hackathons/${hackathonId}/schedule/${scheduleId}`, eventData);
+  },
+  deleteScheduleEvent: async (hackathonId, scheduleId) => {
+    return await api.delete(`/hackathons/${hackathonId}/schedule/${scheduleId}`);
+  },
+
   // Get hosted hackathons for current organizer
   getMyHostedHackathons: async () => {
     return await api.get('/hackathons');

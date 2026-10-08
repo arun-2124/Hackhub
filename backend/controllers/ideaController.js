@@ -144,16 +144,30 @@ const getIdeaById = async (req, res, next) => {
       }
     }
 
-    // Fetch attached files
+    // Fetch attached files (all versions, current indicated)
     const [files] = await pool.query(
-      `SELECT file_id, file_type, original_name, file_size_bytes, uploaded_at 
-       FROM submission_files 
-       WHERE idea_id = ? 
-       ORDER BY uploaded_at ASC`,
+      `SELECT sf.file_id, sf.file_type, sf.original_name, sf.file_size_bytes, sf.version_no, sf.is_current, sf.uploaded_by, sf.uploaded_at, u.full_name AS uploaded_by_name
+       FROM submission_files sf
+       LEFT JOIN users u ON sf.uploaded_by = u.user_id
+       WHERE sf.idea_id = ? 
+       ORDER BY sf.version_no DESC`,
       [ideaId]
     );
     idea.files = files;
     idea.status = idea.submission_status;
+
+    // Fetch evaluations if organizer or admin
+    if (req.user && (req.user.role === 'ADMIN' || idea.hackathon_organizer_id === req.user.user_id)) {
+      const [evaluations] = await pool.query(
+        `SELECT e.evaluation_id, e.score, e.comments, e.decision, e.evaluated_at, u.full_name AS evaluator_name
+         FROM evaluations e
+         JOIN users u ON e.evaluator_id = u.user_id
+         WHERE e.idea_id = ?
+         ORDER BY e.evaluated_at DESC`,
+        [ideaId]
+      );
+      idea.evaluations = evaluations;
+    }
 
     return successResponse(res, 200, 'Project idea retrieved.', idea);
   } catch (error) {
@@ -162,7 +176,7 @@ const getIdeaById = async (req, res, next) => {
 };
 
 /**
- * Submit a project idea (Team or Solo)
+ * Submit a project idea (Team or Solo, DRAFT or SUBMITTED)
  * POST /api/v1/ideas
  */
 const submitIdea = async (req, res, next) => {
@@ -176,7 +190,8 @@ const submitIdea = async (req, res, next) => {
       tech_stack,
       demo_url,
       repo_url,
-      is_public = false
+      is_public = false,
+      submission_status = 'SUBMITTED'
     } = req.body;
 
     const userId = req.user.user_id;
@@ -185,9 +200,11 @@ const submitIdea = async (req, res, next) => {
       return errorResponse(res, 400, 'hackathon_id, title, and abstract are required.');
     }
 
-    // 1. Check hackathon existence and status
+    const initialStatus = submission_status && submission_status.toUpperCase() === 'DRAFT' ? 'DRAFT' : 'SUBMITTED';
+
+    // 1. Check hackathon existence, status, and submission deadline
     const [hackathons] = await pool.query(
-      'SELECT hackathon_id, title, status, min_team_size FROM hackathons WHERE hackathon_id = ?',
+      'SELECT hackathon_id, title, status, min_team_size, submission_deadline, end_date FROM hackathons WHERE hackathon_id = ?',
       [hackathon_id]
     );
 
@@ -198,6 +215,11 @@ const submitIdea = async (req, res, next) => {
     const hackathon = hackathons[0];
     if (hackathon.status === 'COMPLETED' || hackathon.status === 'CANCELLED') {
       return errorResponse(res, 400, `Cannot submit ideas: Hackathon status is ${hackathon.status}.`);
+    }
+
+    const deadline = hackathon.submission_deadline || hackathon.end_date;
+    if (deadline && new Date(deadline) < new Date()) {
+      return errorResponse(res, 400, 'Submission deadline has passed for this hackathon.');
     }
 
     // 2. Verify submitter is registered for the hackathon
@@ -293,7 +315,7 @@ const submitIdea = async (req, res, next) => {
       `INSERT INTO project_ideas (
         hackathon_id, submitted_by_user_id, team_id, title, abstract,
         domain_track, tech_stack, demo_url, repo_url, is_public, submission_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SUBMITTED')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         hackathon_id,
         userId,
@@ -304,17 +326,18 @@ const submitIdea = async (req, res, next) => {
         tech_stack ? tech_stack.trim() : null,
         demo_url ? demo_url.trim() : null,
         repo_url ? repo_url.trim() : null,
-        Boolean(is_public)
+        Boolean(is_public),
+        initialStatus
       ]
     );
 
-    return successResponse(res, 201, 'Project idea submitted successfully.', {
+    return successResponse(res, 201, `Project idea ${initialStatus === 'DRAFT' ? 'saved as draft' : 'submitted successfully'}.`, {
       idea_id: result.insertId,
       hackathon_id,
       team_id: finalTeamId,
       title: title.trim(),
       is_public: Boolean(is_public),
-      submission_status: 'SUBMITTED'
+      submission_status: initialStatus
     });
   } catch (error) {
     next(error);
@@ -322,15 +345,17 @@ const submitIdea = async (req, res, next) => {
 };
 
 /**
- * Upload PPT/PDF document for an idea
+ * Upload PPT/PDF document for an idea (Transactional Multi-versioning)
  * POST /api/v1/ideas/:id/upload
  */
 const uploadSubmissionFile = async (req, res, next) => {
+  const connection = await pool.getConnection();
   try {
     const ideaId = parseInt(req.params.id, 10);
     const userId = req.user.user_id;
 
     if (isNaN(ideaId)) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return errorResponse(res, 400, 'Invalid idea ID.');
     }
 
@@ -338,23 +363,34 @@ const uploadSubmissionFile = async (req, res, next) => {
       return errorResponse(res, 400, 'No file uploaded. Please upload a PDF or PowerPoint (.ppt, .pptx) file.');
     }
 
-    // Check idea existence and permissions
-    const [ideas] = await pool.query(
-      'SELECT idea_id, submitted_by_user_id, team_id, title FROM project_ideas WHERE idea_id = ?',
+    // Check idea existence and permissions + deadline check
+    const [ideas] = await connection.query(
+      `SELECT pi.idea_id, pi.submitted_by_user_id, pi.team_id, pi.title, pi.submission_status,
+              h.submission_deadline, h.end_date, h.status AS hackathon_status
+       FROM project_ideas pi
+       JOIN hackathons h ON pi.hackathon_id = h.hackathon_id
+       WHERE pi.idea_id = ?`,
       [ideaId]
     );
 
     if (ideas.length === 0) {
-      // Remove uploaded file if idea does not exist
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return errorResponse(res, 404, 'Project idea not found.');
     }
 
     const idea = ideas[0];
+
+    // Enforce submission deadline
+    const deadline = idea.submission_deadline || idea.end_date;
+    if (deadline && new Date(deadline) < new Date()) {
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return errorResponse(res, 400, 'Submission deadline has passed. File uploads are locked.');
+    }
+
     let isAuthorized = idea.submitted_by_user_id === userId || req.user.role === 'ADMIN';
 
     if (!isAuthorized && idea.team_id) {
-      const [members] = await pool.query(
+      const [members] = await connection.query(
         'SELECT membership_id FROM team_members WHERE team_id = ? AND user_id = ?',
         [idea.team_id, userId]
       );
@@ -366,44 +402,69 @@ const uploadSubmissionFile = async (req, res, next) => {
       return errorResponse(res, 403, 'Forbidden: You do not have permission to attach files to this project idea.');
     }
 
+    await connection.beginTransaction();
+
+    // Query highest version_no for this idea
+    const [verRows] = await connection.query(
+      'SELECT COALESCE(MAX(version_no), 0) AS max_version FROM submission_files WHERE idea_id = ?',
+      [ideaId]
+    );
+    const nextVersion = verRows[0].max_version + 1;
+
+    // Atomically mark prior files as is_current = 0 without deleting them
+    await connection.query(
+      'UPDATE submission_files SET is_current = 0 WHERE idea_id = ?',
+      [ideaId]
+    );
+
     // Determine file_type enum
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileType = ext === '.pdf' ? 'PDF' : 'PPT';
 
-    // Store metadata only in submission_files
-    const [result] = await pool.query(
+    // Insert new version
+    const [result] = await connection.query(
       `INSERT INTO submission_files (
-        idea_id, file_type, file_name, original_name, file_path, file_size_bytes
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+        idea_id, file_type, file_name, original_name, file_path, file_size_bytes, version_no, is_current, uploaded_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
       [
         ideaId,
         fileType,
         req.file.filename,
         req.file.originalname,
         req.file.path,
-        req.file.size
+        req.file.size,
+        nextVersion,
+        userId
       ]
     );
 
-    return successResponse(res, 201, 'File uploaded and attached successfully.', {
+    await connection.commit();
+
+    return successResponse(res, 201, `File uploaded successfully as Version ${nextVersion}.`, {
       file_id: result.insertId,
       idea_id: ideaId,
+      version_no: nextVersion,
+      is_current: 1,
       file_type: fileType,
       original_name: req.file.originalname,
       file_size_bytes: req.file.size,
       uploaded_at: new Date()
     });
   } catch (error) {
+    await connection.rollback();
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
     next(error);
+  } finally {
+    connection.release();
   }
 };
 
 /**
- * Download an attached file
+ * Download a file version by fileId (or by ideaId/versionId)
  * GET /api/v1/ideas/files/:fileId/download
+ * GET /api/v1/ideas/:id/files/:fileId/download
  */
 const downloadFile = async (req, res, next) => {
   try {
@@ -431,6 +492,11 @@ const downloadFile = async (req, res, next) => {
     }
 
     const fileRecord = rows[0];
+
+    // Check specific idea match if :id parameter is present in URL
+    if (req.params.id && parseInt(req.params.id, 10) !== fileRecord.idea_id) {
+      return errorResponse(res, 400, 'File does not belong to the specified idea.');
+    }
 
     // If idea is private, verify user access
     if (!fileRecord.is_public) {
@@ -473,6 +539,32 @@ const downloadFile = async (req, res, next) => {
 };
 
 /**
+ * Get file version history for an idea
+ * GET /api/v1/ideas/:id/versions
+ */
+const getFileVersions = async (req, res, next) => {
+  try {
+    const ideaId = parseInt(req.params.id, 10);
+    if (isNaN(ideaId)) return errorResponse(res, 400, 'Invalid idea ID.');
+
+    const [rows] = await pool.query(
+      `SELECT sf.file_id, sf.idea_id, sf.version_no, sf.is_current, sf.file_type,
+              sf.original_name, sf.file_size_bytes, sf.uploaded_at, sf.uploaded_by,
+              u.full_name AS uploaded_by_name
+       FROM submission_files sf
+       LEFT JOIN users u ON sf.uploaded_by = u.user_id
+       WHERE sf.idea_id = ?
+       ORDER BY sf.version_no DESC`,
+      [ideaId]
+    );
+
+    return successResponse(res, 200, 'Version history retrieved.', rows);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Update project idea details (Submitter or Team Leader)
  * PUT /api/v1/ideas/:id
  */
@@ -486,7 +578,11 @@ const updateIdea = async (req, res, next) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT idea_id, submitted_by_user_id, team_id FROM project_ideas WHERE idea_id = ?',
+      `SELECT pi.idea_id, pi.submitted_by_user_id, pi.team_id, pi.submission_status,
+              h.submission_deadline, h.end_date
+       FROM project_ideas pi
+       JOIN hackathons h ON pi.hackathon_id = h.hackathon_id
+       WHERE pi.idea_id = ?`,
       [ideaId]
     );
 
@@ -495,6 +591,13 @@ const updateIdea = async (req, res, next) => {
     }
 
     const idea = rows[0];
+
+    // Enforce submission deadline
+    const deadline = idea.submission_deadline || idea.end_date;
+    if (deadline && new Date(deadline) < new Date()) {
+      return errorResponse(res, 400, 'Submission deadline has passed. Edits are locked.');
+    }
+
     let isAuthorized = idea.submitted_by_user_id === userId || req.user.role === 'ADMIN';
 
     if (!isAuthorized && idea.team_id) {
@@ -511,7 +614,15 @@ const updateIdea = async (req, res, next) => {
       return errorResponse(res, 403, 'Forbidden: You are not authorized to update this project idea.');
     }
 
-    const { title, abstract, domain_track, tech_stack, demo_url, repo_url, is_public } = req.body;
+    const { title, abstract, domain_track, tech_stack, demo_url, repo_url, is_public, submission_status } = req.body;
+
+    let targetStatus = undefined;
+    if (submission_status) {
+      const st = submission_status.toUpperCase();
+      if (['DRAFT', 'SUBMITTED'].includes(st)) {
+        targetStatus = st;
+      }
+    }
 
     await pool.query(
       `UPDATE project_ideas
@@ -521,7 +632,8 @@ const updateIdea = async (req, res, next) => {
            tech_stack = COALESCE(?, tech_stack),
            demo_url = COALESCE(?, demo_url),
            repo_url = COALESCE(?, repo_url),
-           is_public = COALESCE(?, is_public)
+           is_public = COALESCE(?, is_public),
+           submission_status = COALESCE(?, submission_status)
        WHERE idea_id = ?`,
       [
         title ? title.trim() : null,
@@ -531,6 +643,7 @@ const updateIdea = async (req, res, next) => {
         demo_url !== undefined ? demo_url : null,
         repo_url !== undefined ? repo_url : null,
         is_public !== undefined ? Boolean(is_public) : null,
+        targetStatus !== undefined ? targetStatus : null,
         ideaId
       ]
     );
@@ -538,6 +651,78 @@ const updateIdea = async (req, res, next) => {
     return successResponse(res, 200, 'Project idea updated successfully.');
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * Evaluate a submission (Organizer or Admin)
+ * POST /api/v1/ideas/:id/evaluate
+ */
+const evaluateSubmission = async (req, res, next) => {
+  const connection = await pool.getConnection();
+  try {
+    const ideaId = parseInt(req.params.id, 10);
+    const { score, comments, decision } = req.body;
+    const userId = req.user.user_id;
+
+    if (isNaN(ideaId) || !decision) {
+      return errorResponse(res, 400, 'idea_id and decision (ACCEPTED, REJECTED, UNDER_REVIEW) are required.');
+    }
+
+    const validDecisions = ['ACCEPTED', 'REJECTED', 'UNDER_REVIEW'];
+    const normDecision = decision.toUpperCase().trim();
+    if (!validDecisions.includes(normDecision)) {
+      return errorResponse(res, 400, `Invalid decision. Must be one of: ${validDecisions.join(', ')}`);
+    }
+
+    const [rows] = await connection.query(
+      `SELECT pi.idea_id, h.organizer_id, pi.title
+       FROM project_ideas pi
+       JOIN hackathons h ON pi.hackathon_id = h.hackathon_id
+       WHERE pi.idea_id = ?`,
+      [ideaId]
+    );
+
+    if (rows.length === 0) return errorResponse(res, 404, 'Project idea not found.');
+
+    if (req.user.role !== 'ADMIN' && rows[0].organizer_id !== userId) {
+      return errorResponse(res, 403, 'Forbidden: Only the hackathon organizer or admin can evaluate submissions.');
+    }
+
+    await connection.beginTransaction();
+
+    const [evalResult] = await connection.query(
+      `INSERT INTO evaluations (idea_id, evaluator_id, score, comments, decision)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        ideaId,
+        userId,
+        score !== undefined && score !== null ? parseFloat(score) : null,
+        comments ? comments.trim() : null,
+        normDecision
+      ]
+    );
+
+    // Atomically update project_ideas status
+    await connection.query(
+      'UPDATE project_ideas SET submission_status = ? WHERE idea_id = ?',
+      [normDecision, ideaId]
+    );
+
+    await connection.commit();
+
+    return successResponse(res, 201, `Evaluation recorded for '${rows[0].title}'.`, {
+      evaluation_id: evalResult.insertId,
+      idea_id: ideaId,
+      decision: normDecision,
+      score,
+      comments
+    });
+  } catch (error) {
+    await connection.rollback();
+    next(error);
+  } finally {
+    connection.release();
   }
 };
 
@@ -555,7 +740,7 @@ const updateStatus = async (req, res, next) => {
       return errorResponse(res, 400, 'Invalid parameters. submission_status is required.');
     }
 
-    const validStatuses = ['SUBMITTED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED'];
+    const validStatuses = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED'];
     let normalizedStatus = rawStatus.toUpperCase().trim();
     if (normalizedStatus === 'PENDING') normalizedStatus = 'SUBMITTED';
 
@@ -631,7 +816,8 @@ const getHackathonSubmissions = async (req, res, next) => {
         u.college_name AS submitter_college,
         t.team_id,
         t.team_name,
-        COUNT(sf.file_id) AS file_count
+        COUNT(sf.file_id) AS file_count,
+        MAX(sf.version_no) AS latest_version
       FROM project_ideas pi
       JOIN users u ON pi.submitted_by_user_id = u.user_id
       LEFT JOIN teams t ON pi.team_id = t.team_id
@@ -695,7 +881,9 @@ module.exports = {
   submitIdea,
   uploadSubmissionFile,
   downloadFile,
+  getFileVersions,
   updateIdea,
+  evaluateSubmission,
   updateStatus,
   getHackathonSubmissions,
   deleteIdea

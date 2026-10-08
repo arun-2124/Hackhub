@@ -301,17 +301,101 @@ export default function HackathonDetail() {
             )}
           </div>
 
-          {/* Rules */}
-          {hackathon.rules && (
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center">
-                <AlertTriangle className="w-5 h-5 mr-2 text-amber-500" /> Rules & Guidelines
-              </h2>
-              <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-                {hackathon.rules}
+          {/* Tracks Section */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center">
+              <Award className="w-5 h-5 mr-2 text-indigo-600" /> Hackathon Tracks & Domains
+            </h2>
+            {hackathon.tracks && hackathon.tracks.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {hackathon.tracks.map((track) => (
+                  <div key={track.track_id} className="p-4 rounded-xl border border-slate-100 bg-slate-50/70 space-y-1.5">
+                    <h4 className="text-sm font-bold text-indigo-900">{track.track_name}</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {track.description || 'No specific track description provided.'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 py-3 italic">Tracks not announced yet.</p>
+            )}
+          </div>
+
+          {/* Schedule & Online Meetings Section */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center">
+              <Clock className="w-5 h-5 mr-2 text-sky-600" /> Event Schedule & Live Sessions
+            </h2>
+            {hackathon.schedule && hackathon.schedule.length > 0 ? (
+              <div className="space-y-4">
+                {hackathon.schedule.map((item) => (
+                  <div
+                    key={item.schedule_id}
+                    className="p-4 rounded-xl border border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-sky-100 text-sky-800">
+                          {new Date(item.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(item.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {item.meeting_platform && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                            {item.meeting_platform}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900">{item.event_name}</h4>
+                      {item.description && (
+                        <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>
+                      )}
+                    </div>
+
+                    <div className="shrink-0">
+                      {item.meeting_url ? (
+                        <a
+                          href={item.meeting_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                          Join Live Session
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium border border-slate-200">
+                          Meeting link not available yet
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 py-3 italic">Schedule not announced yet.</p>
+            )}
+          </div>
+
+          {/* Rules & Eligibility */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 text-amber-500" /> Rules & Eligibility
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Eligibility</h4>
+                <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  {hackathon.eligibility || 'Open to all students and developers.'}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rules & Guidelines</h4>
+                <p className="text-xs text-slate-600 bg-amber-50/40 p-3 rounded-lg border border-amber-100 whitespace-pre-line">
+                  {hackathon.rules || 'Standard hackathon code of conduct applies.'}
+                </p>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Announcements Section */}
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
@@ -358,7 +442,7 @@ export default function HackathonDetail() {
               Key Event Details
             </h3>
 
-            {/* Dates */}
+            {/* Dates & Deadlines */}
             <div className="space-y-4 text-sm">
               <div className="flex items-start space-x-3">
                 <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
@@ -384,6 +468,20 @@ export default function HackathonDetail() {
                 </div>
               </div>
 
+              {hackathon.submission_deadline && (
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 rounded-lg bg-rose-50 text-rose-600">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Submission Deadline</p>
+                    <p className="font-semibold text-slate-800">
+                      {formatDate(hackathon.submission_deadline)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-start space-x-3">
                 <div className="p-2 rounded-lg bg-sky-50 text-sky-600">
                   <Users className="w-4 h-4" />
@@ -396,15 +494,38 @@ export default function HackathonDetail() {
                 </div>
               </div>
 
-              {hackathon.prize_pool && (
+              <div className="flex items-start space-x-3">
+                <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Mode & Venue</p>
+                  <p className="font-semibold text-slate-800">
+                    {hackathon.hackathon_mode || 'ONLINE'} • {hackathon.location || 'Online'}
+                  </p>
+                </div>
+              </div>
+
+              {(hackathon.prize_details || hackathon.prize_pool) && (
                 <div className="flex items-start space-x-3">
                   <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Prizes & Bounties</p>
-                    <p className="font-semibold text-slate-800">{hackathon.prize_pool}</p>
+                    <p className="font-semibold text-slate-800">
+                      {hackathon.prize_details || hackathon.prize_pool}
+                    </p>
                   </div>
+                </div>
+              )}
+
+              {hackathon.contact_email && (
+                <div className="pt-3 border-t border-slate-100 text-xs text-slate-500">
+                  <p className="font-semibold text-slate-700">Official Contact:</p>
+                  <a href={`mailto:${hackathon.contact_email}`} className="text-indigo-600 hover:underline">
+                    {hackathon.contact_email}
+                  </a>
                 </div>
               )}
             </div>

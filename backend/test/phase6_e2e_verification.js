@@ -362,7 +362,8 @@ async function runEndToEndSuite() {
 
     // 2.10 Verify Announcement is Visible to Participants
     const verifyAnnRes = await request('GET', '/announcements/hackathon/1', null, participantToken);
-    const hasAnn = verifyAnnRes.data?.some(a => a.announcement_id === testAnnouncementId);
+    const annList = Array.isArray(verifyAnnRes.data) ? verifyAnnRes.data : (verifyAnnRes.data?.announcements || []);
+    const hasAnn = annList.some(a => a.announcement_id === testAnnouncementId);
     assert(hasAnn, 'Participant immediately receives broadcasted announcement');
 
     // 2.11 Delete Announcement
