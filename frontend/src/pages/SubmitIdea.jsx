@@ -108,8 +108,8 @@ export default function SubmitIdea() {
     setAlert({ type: '', message: '' });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, saveMode = 'SUBMITTED') => {
+    if (e) e.preventDefault();
     setAlert({ type: '', message: '' });
 
     if (!title.trim() || !abstract.trim()) {
@@ -131,15 +131,19 @@ export default function SubmitIdea() {
       if (repositoryUrl.trim()) formData.append('repository_url', repositoryUrl.trim());
       if (demoUrl.trim()) formData.append('demo_url', demoUrl.trim());
       formData.append('is_public', isPublic ? 'true' : 'false');
+      formData.append('submission_status', saveMode);
 
       if (file) {
         formData.append('file', file);
       }
 
       const res = await ideaService.submitIdea(formData);
-      const newIdeaId = res.data?.idea?.idea_id || res.data?.idea_id;
+      const newIdeaId = res.data?.idea?.idea_id || res.data?.idea_id || res.data?.data?.idea_id;
 
-      setAlert({ type: 'success', message: 'Project idea submitted successfully!' });
+      setAlert({
+        type: 'success',
+        message: saveMode === 'DRAFT' ? 'Project saved as Draft!' : 'Project idea submitted successfully!'
+      });
       setTimeout(() => {
         if (newIdeaId) {
           navigate(`/ideas/${newIdeaId}`);
@@ -376,20 +380,32 @@ export default function SubmitIdea() {
               </label>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-md transition-colors cursor-pointer flex items-center justify-center"
-            >
-              {submitting ? (
-                'Submitting Idea & Uploading Files...'
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" /> Submit Project Idea
-                </>
-              )}
-            </button>
+            {/* Action Buttons: Save as Draft vs Final Submit */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="button"
+                disabled={submitting || (hackathon?.submission_deadline && new Date(hackathon.submission_deadline) < new Date())}
+                onClick={(e) => handleSubmit(e, 'DRAFT')}
+                className="flex-1 py-3 px-4 bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-semibold text-sm rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center"
+              >
+                Save as Draft
+              </button>
+
+              <button
+                type="button"
+                disabled={submitting || (hackathon?.submission_deadline && new Date(hackathon.submission_deadline) < new Date())}
+                onClick={(e) => handleSubmit(e, 'SUBMITTED')}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-md transition-colors cursor-pointer flex items-center justify-center"
+              >
+                {submitting ? (
+                  'Submitting Idea & Uploading Files...'
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" /> Submit Final Idea
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </div>
       )}

@@ -80,9 +80,19 @@ export const ideaService = {
     window.open(url, '_blank');
   },
 
+  // File version history
+  getVersions: async (ideaId) => {
+    return await api.get(`/ideas/${ideaId}/versions`);
+  },
+
   // Update idea details
   update: async (id, ideaData) => {
     return await api.put(`/ideas/${id}`, ideaData);
+  },
+
+  // Formal evaluation (Organizer/Admin)
+  evaluate: async (id, evaluationData) => {
+    return await api.post(`/ideas/${id}/evaluate`, evaluationData);
   },
 
   // Update submission status (Organizer/Admin)

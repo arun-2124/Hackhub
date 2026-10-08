@@ -30,6 +30,13 @@ export default function EvaluateSubmissions() {
   const [downloadingId, setDownloadingId] = useState(null);
   const [alert, setAlert] = useState({ type: '', message: '' });
 
+  // Formal Evaluation Modal State
+  const [evaluatingSub, setEvaluatingSub] = useState(null);
+  const [evalScore, setEvalScore] = useState('');
+  const [evalComments, setEvalComments] = useState('');
+  const [evalDecision, setEvalDecision] = useState('ACCEPTED');
+  const [submittingEval, setSubmittingEval] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -53,13 +60,48 @@ export default function EvaluateSubmissions() {
     fetchData();
   }, [id]);
 
+  const handleOpenEvalModal = (sub) => {
+    setEvaluatingSub(sub);
+    setEvalScore(sub.score || '');
+    setEvalComments('');
+    setEvalDecision(sub.submission_status === 'REJECTED' ? 'REJECTED' : 'ACCEPTED');
+  };
+
+  const handleFormalEvaluate = async (e) => {
+    e.preventDefault();
+    if (!evaluatingSub) return;
+
+    setSubmittingEval(true);
+    try {
+      await ideaService.evaluate(evaluatingSub.idea_id, {
+        score: evalScore ? parseFloat(evalScore) : null,
+        comments: evalComments.trim() || null,
+        decision: evalDecision
+      });
+
+      setAlert({
+        type: 'success',
+        message: `Evaluation submitted for '${evaluatingSub.title}' (${evalDecision}).`
+      });
+      setEvaluatingSub(null);
+      fetchData();
+    } catch (err) {
+      setAlert({
+        type: 'error',
+        message: err.response?.data?.message || 'Failed to record evaluation.'
+      });
+    } finally {
+      setSubmittingEval(false);
+    }
+  };
+
   const handleStatusChange = async (ideaId, newStatus) => {
     setUpdatingId(ideaId);
     setAlert({ type: '', message: '' });
     try {
       await ideaService.updateIdeaStatus(ideaId, newStatus);
       setSubmissions((prev) =>
-        prev.map((sub) => (sub.idea_id === ideaId ? { ...sub, status: newStatus } : sub))
+        prev.map((sub) => (sub.idea_id === ideaId ? { ...sub, status: newStatus, submission_status: newStatus } : sub))
       );
       setAlert({ type: 'success', message: `Submission status updated to ${newStatus}.` });
     } catch (err) {
@@ -172,16 +214,23 @@ export default function EvaluateSubmissions() {
                   <h3 className="text-lg font-bold text-slate-900">{sub.title}</h3>
                 </div>
 
-                {/* Status Selector Dropdown */}
+                {/* Status & Grade Action */}
                 <div className="flex items-center space-x-2 shrink-0">
-                  <span className="text-xs font-semibold text-slate-500">Outcome:</span>
+                  <button
+                    onClick={() => handleOpenEvalModal(sub)}
+                    className="py-1.5 px-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 transition-colors cursor-pointer flex items-center"
+                  >
+                    <ClipboardCheck className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                    Grade & Review
+                  </button>
                   <select
-                    value={sub.status}
+                    value={sub.submission_status || sub.status}
                     disabled={updatingId === sub.idea_id}
                     onChange={(e) => handleStatusChange(sub.idea_id, e.target.value)}
                     className="py-1.5 px-3 rounded-lg border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
                   >
-                    <option value="PENDING">PENDING</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="SUBMITTED">SUBMITTED</option>
                     <option value="UNDER_REVIEW">UNDER REVIEW</option>
                     <option value="ACCEPTED">ACCEPTED</option>
                     <option value="REJECTED">REJECTED</option>
@@ -222,29 +271,101 @@ export default function EvaluateSubmissions() {
                   )}
                 </div>
 
-                {/* Attached Files */}
+                {/* Attached Files & Version Info */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {sub.files && sub.files.length > 0 ? (
-                    sub.files.map((file) => (
-                      <button
-                        key={file.file_id}
-                        onClick={() => handleDownload(file)}
-                        disabled={downloadingId === file.file_id}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors cursor-pointer"
-                        title={file.file_original_name}
-                      >
-                        <Download className="w-3.5 h-3.5 mr-1.5" />
-                        Download {file.file_type?.toUpperCase()} (
-                        {(file.file_size / (1024 * 1024)).toFixed(1)} MB)
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400 italic">No deck attached</span>
-                  )}
+                  <Link
+                    to={`/ideas/${sub.idea_id}`}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" />
+                    View Versions & Details
+                  </Link>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Formal Evaluation Modal */}
+      {evaluatingSub && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">
+                Grade Submission: {evaluatingSub.title}
+              </h3>
+              <button
+                onClick={() => setEvaluatingSub(null)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleFormalEvaluate} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Numerical Score (0 - 100)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={evalScore}
+                  onChange={(e) => setEvalScore(e.target.value)}
+                  placeholder="e.g. 92.5"
+                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Decision Outcome *
+                </label>
+                <select
+                  value={evalDecision}
+                  onChange={(e) => setEvalDecision(e.target.value)}
+                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-bold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                >
+                  <option value="ACCEPTED">ACCEPTED (Winner / Shortlist)</option>
+                  <option value="UNDER_REVIEW">UNDER REVIEW</option>
+                  <option value="REJECTED">REJECTED</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Jury Feedback & Comments
+                </label>
+                <textarea
+                  rows={3}
+                  value={evalComments}
+                  onChange={(e) => setEvalComments(e.target.value)}
+                  placeholder="Constructive feedback on technical execution, innovation, and presentation..."
+                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-y"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEvaluatingSub(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEval}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  {submittingEval ? 'Submitting...' : 'Save Evaluation'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

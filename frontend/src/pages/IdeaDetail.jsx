@@ -198,48 +198,120 @@ export default function IdeaDetail() {
           )}
         </div>
 
-        {/* Attached Files Section */}
+        {/* Attached Files & Version History Section */}
         <div className="space-y-4 pt-6 border-t border-slate-100">
-          <h3 className="text-base font-bold text-slate-900 flex items-center">
-            <FileText className="w-4 h-4 mr-2 text-indigo-600" /> Attached Pitch Deck & Documentation
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-900 flex items-center">
+              <FileText className="w-4 h-4 mr-2 text-indigo-600" /> Attached Pitch Deck & Version History
+            </h3>
+            {idea.files && idea.files.length > 0 && (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {idea.files.length} {idea.files.length === 1 ? 'version' : 'versions'}
+              </span>
+            )}
+          </div>
 
           {idea.files && idea.files.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {idea.files.map((file) => (
-                <div
-                  key={file.file_id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xs transition-all"
-                >
-                  <div className="flex items-center space-x-3 overflow-hidden">
-                    <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div className="truncate">
-                      <p className="text-xs font-semibold text-slate-900 truncate" title={file.file_original_name}>
-                        {file.file_original_name}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        {file.file_type?.toUpperCase()} • {formatFileSize(file.file_size)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleDownload(file)}
-                    disabled={downloadingId === file.file_id}
-                    className="ml-3 p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50"
-                    title="Download File"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+            <div className="overflow-hidden border border-slate-200 rounded-2xl">
+              <table className="min-w-full divide-y divide-slate-200 text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-semibold">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left">Version</th>
+                    <th scope="col" className="px-4 py-3 text-left">File Name</th>
+                    <th scope="col" className="px-4 py-3 text-left">Format & Size</th>
+                    <th scope="col" className="px-4 py-3 text-left">Uploaded By</th>
+                    <th scope="col" className="px-4 py-3 text-left">Date</th>
+                    <th scope="col" className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {idea.files.map((file) => (
+                    <tr key={file.file_id} className={file.is_current ? 'bg-indigo-50/30' : 'hover:bg-slate-50/60'}>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-800">v{file.version_no || 1}</span>
+                          {file.is_current ? (
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full border border-emerald-200">
+                              Current
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-full">
+                              Previous
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 max-w-xs truncate font-medium text-slate-800" title={file.original_name}>
+                        {file.original_name}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                        {file.file_type?.toUpperCase()} • {formatFileSize(file.file_size_bytes)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                        {file.uploaded_by_name || 'Team Submitter'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-400">
+                        {new Date(file.uploaded_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => handleDownload(file)}
+                          disabled={downloadingId === file.file_id}
+                          className="inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <Download className="w-3.5 h-3.5 mr-1" />
+                          Download
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <p className="text-xs text-slate-400 italic">No presentation deck or files attached to this idea.</p>
           )}
         </div>
+
+        {/* Formal Evaluations Section (Visible to Organizers/Admins) */}
+        {idea.evaluations && idea.evaluations.length > 0 && (
+          <div className="space-y-4 pt-6 border-t border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center">
+              <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Official Jury Evaluations
+            </h3>
+            <div className="space-y-3">
+              {idea.evaluations.map((ev) => (
+                <div key={ev.evaluation_id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800 text-sm">{ev.evaluator_name}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        ev.decision === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
+                        ev.decision === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
+                        'bg-amber-100 text-amber-800'
+                      }`}>
+                        {ev.decision}
+                      </span>
+                    </div>
+                    {ev.score !== null && (
+                      <span className="text-sm font-extrabold text-indigo-700">
+                        Score: {ev.score}/100
+                      </span>
+                    )}
+                  </div>
+                  {ev.comments && (
+                    <p className="text-xs text-slate-600 leading-relaxed italic bg-white p-3 rounded-lg border border-slate-100">
+                      "{ev.comments}"
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-400">
+                    Evaluated on {new Date(ev.evaluated_at).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
