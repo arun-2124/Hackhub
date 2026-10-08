@@ -57,8 +57,8 @@ const errorHandler = require('./middleware/errorMiddleware');
 app.use(errorHandler);
 
 // Start Server
-const server = app.listen(PORT, () => {
-  console.log(`[HackHub Server] Running on http://localhost:${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[HackHub Server] Running on http://0.0.0.0:${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
 });
 
 server.on('error', (err) => {
