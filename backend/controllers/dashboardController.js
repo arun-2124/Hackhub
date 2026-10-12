@@ -197,18 +197,66 @@ const getAdminDashboard = async (req, res, next) => {
     // 5. Total Registrations & Teams
     const [regTotal] = await pool.query('SELECT COUNT(*) AS total FROM registrations');
     const [teamTotal] = await pool.query('SELECT COUNT(*) AS total FROM teams');
+    const [userTotal] = await pool.query('SELECT COUNT(*) AS total FROM users');
+    const [hackathonTotal] = await pool.query('SELECT COUNT(*) AS total FROM hackathons');
+    const [submissionTotal] = await pool.query('SELECT COUNT(*) AS total FROM project_ideas');
+
+    // Convert group-by arrays to key-value objects for frontend convenience
+    const roleBreakdown = {};
+    userBreakdown.forEach((r) => {
+      roleBreakdown[r.role] = Number(r.count);
+    });
+
+    const statusBreakdown = {};
+    hackathonBreakdown.forEach((h) => {
+      statusBreakdown[h.status] = Number(h.count);
+    });
+
+    const submissionStatusBreakdown = {};
+    submissionBreakdown.forEach((s) => {
+      submissionStatusBreakdown[s.submission_status] = Number(s.count);
+    });
+
+    const totalStorageBytes = Number(fileStats[0].total_storage_bytes || 0);
+    const storageUsedMb = (totalStorageBytes / (1024 * 1024)).toFixed(2);
 
     return successResponse(res, 200, 'Admin dashboard overview retrieved.', {
+      // Existing properties for backward compatibility with automated tests
       users_by_role: userBreakdown,
       hackathons_by_status: hackathonBreakdown,
       submissions_by_status: submissionBreakdown,
       totals: {
+        total_users: userTotal[0].total,
+        total_hackathons: hackathonTotal[0].total,
         total_registrations: regTotal[0].total,
         total_teams: teamTotal[0].total,
+        total_submissions: submissionTotal[0].total,
         total_files_uploaded: fileStats[0].total_files,
-        total_storage_bytes: fileStats[0].total_storage_bytes,
-        total_storage_mb: (fileStats[0].total_storage_bytes / (1024 * 1024)).toFixed(2)
-      }
+        total_storage_bytes: totalStorageBytes,
+        total_storage_mb: storageUsedMb
+      },
+      // Convenience fields directly matching frontend AdminDashboard.jsx expectations
+      stats: {
+        total_users: userTotal[0].total,
+        total_hackathons: hackathonTotal[0].total,
+        total_teams: teamTotal[0].total,
+        total_submissions: submissionTotal[0].total,
+        total_files: fileStats[0].total_files,
+        storage_used_mb: storageUsedMb,
+        role_breakdown: roleBreakdown,
+        status_breakdown: statusBreakdown,
+        submission_status_breakdown: submissionStatusBreakdown
+      },
+      // Direct root properties if frontend references root stats
+      total_users: userTotal[0].total,
+      total_hackathons: hackathonTotal[0].total,
+      total_teams: teamTotal[0].total,
+      total_submissions: submissionTotal[0].total,
+      total_files: fileStats[0].total_files,
+      storage_used_mb: storageUsedMb,
+      role_breakdown: roleBreakdown,
+      status_breakdown: statusBreakdown,
+      submission_status_breakdown: submissionStatusBreakdown
     });
   } catch (error) {
     next(error);
