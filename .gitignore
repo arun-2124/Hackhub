@@ -17,6 +17,12 @@ frontend/.env
 backend/uploads/submissions/*
 !backend/uploads/submissions/.gitkeep
 
+# Database Dumps & Production Backups (Stored in external protected directory)
+*.sql.bak
+backend/sql/*backup*.sql
+backend/sql/*deployment*.sql
+backend/sql/migrate_existing_database.sql
+
 # Build and logs
 dist/
 build/

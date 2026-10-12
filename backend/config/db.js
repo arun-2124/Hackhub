@@ -38,21 +38,54 @@ function getWslIp() {
   return null;
 }
 
-// Synchronously determine reachable DB host (127.0.0.1 vs WSL IP)
+const fs = require('fs');
+const path = require('path');
+
+// Synchronously determine reachable DB host (127.0.0.1 vs WSL IP vs Cloud Host)
 function resolveDbHostSync() {
   const configured = process.env.DB_HOST || '127.0.0.1';
   if (configured !== '127.0.0.1' && configured !== 'localhost') {
     return configured;
   }
-  // If running on Windows and WSL exists, query WSL IP
-  const wslIp = getWslIp();
-  if (wslIp) {
-    return wslIp;
+  // If running on Windows development machine and WSL exists, query WSL IP
+  if (process.platform === 'win32') {
+    const wslIp = getWslIp();
+    if (wslIp) {
+      return wslIp;
+    }
   }
   return configured;
 }
 
+function getSslConfig() {
+  // 1. Direct CA certificate content provided in environment variable
+  if (process.env.DB_CA_CERT) {
+    return {
+      ca: process.env.DB_CA_CERT,
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
+    };
+  }
+  // 2. CA certificate file path provided
+  if (process.env.DB_CA_CERT_PATH && fs.existsSync(process.env.DB_CA_CERT_PATH)) {
+    return {
+      ca: fs.readFileSync(process.env.DB_CA_CERT_PATH, 'utf8'),
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
+    };
+  }
+  // 3. Fallback to system trust store for cloud providers with public root CAs (Let's Encrypt / DigiCert)
+  if (process.env.DB_SSL === 'true') {
+    return {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
+    };
+  }
+  return undefined;
+}
+
 const resolvedHost = resolveDbHostSync();
+const sslConfig = getSslConfig();
 
 // Create MySQL Connection Pool
 const pool = mysql.createPool({
@@ -65,7 +98,8 @@ const pool = mysql.createPool({
   connectionLimit: 15,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 0,
+  ssl: sslConfig
 });
 
 // Test connection on startup

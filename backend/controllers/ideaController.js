@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { persistUploadedFile, streamDownloadedFile } = require('../services/storageService');
 
 /**
  * Browse all publicly shared project ideas
@@ -421,6 +422,9 @@ const uploadSubmissionFile = async (req, res, next) => {
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileType = ext === '.pdf' ? 'PDF' : 'PPT';
 
+    // Persist file via storageService (streams to Supabase if configured, otherwise retains local disk path)
+    const storageResult = await persistUploadedFile(req.file, ideaId);
+
     // Insert new version
     const [result] = await connection.query(
       `INSERT INTO submission_files (
@@ -431,7 +435,7 @@ const uploadSubmissionFile = async (req, res, next) => {
         fileType,
         req.file.filename,
         req.file.originalname,
-        req.file.path,
+        storageResult.filePath,
         req.file.size,
         nextVersion,
         userId
@@ -523,16 +527,8 @@ const downloadFile = async (req, res, next) => {
       }
     }
 
-    // Resolve absolute path
-    const resolvedPath = path.isAbsolute(fileRecord.file_path)
-      ? fileRecord.file_path
-      : path.join(__dirname, '..', fileRecord.file_path);
-
-    if (!fs.existsSync(resolvedPath)) {
-      return errorResponse(res, 404, 'Physical file not found on server storage.');
-    }
-
-    return res.download(resolvedPath, fileRecord.original_name);
+    // Stream file via storageService (checks local disk first, then cloud storage)
+    return streamDownloadedFile(fileRecord.file_path, fileRecord.original_name, res);
   } catch (error) {
     next(error);
   }
