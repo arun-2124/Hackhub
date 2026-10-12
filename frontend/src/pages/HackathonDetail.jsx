@@ -123,16 +123,18 @@ export default function HackathonDetail() {
   const isOrganizerOwner =
     user?.role === 'ORGANIZER' && Number(user?.user_id) === Number(hackathon.organizer_id);
 
-  // Parse external source if embedded in description
+  // Parse external source if embedded in description or from database column
   const sourceMatch = hackathon?.description
     ? hackathon.description.match(/\[Source:\s*([^\s|]+)\s*\|\s*([^\]]+)\]/)
     : null;
-  const isExternal = Boolean(sourceMatch);
-  const sourcePlatform = sourceMatch ? sourceMatch[1] : null;
-  const sourceUrl = sourceMatch ? sourceMatch[2] : null;
+  const officialUrl = hackathon?.external_url || (sourceMatch ? sourceMatch[2] : null);
+  const sourcePlatform = sourceMatch ? sourceMatch[1] : (officialUrl ? 'Official Page' : null);
+  const isExternal = Boolean(officialUrl);
+  const sourceUrl = officialUrl;
   const cleanDescription = hackathon?.description
     ? hackathon.description.replace(/\[Source:[^\]]+\]/g, '').trim()
     : '';
+  const isVerifiedEvent = Boolean(hackathon?.is_verified);
 
   return (
     <div className="space-y-8 py-6">
@@ -160,6 +162,12 @@ export default function HackathonDetail() {
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={hackathon.status} />
+              {isVerifiedEvent && (
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-full flex items-center shadow-xs">
+                  <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                  Verified Event
+                </span>
+              )}
               {isExternal && (
                 <span className="px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold rounded-full flex items-center shadow-xs">
                   <Globe className="w-3.5 h-3.5 mr-1 text-amber-600" />
@@ -180,7 +188,7 @@ export default function HackathonDetail() {
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-500 pt-1">
               <span className="flex items-center">
                 <Building className="w-4 h-4 mr-1 text-slate-400" />
-                Organized by: <strong className="ml-1 text-slate-700">{hackathon.organizer_name || 'Organizer'}</strong>
+                Hosted on HackHub by: <strong className="ml-1 text-slate-700">{hackathon.organizer_name || 'Organizer'}</strong>
                 {hackathon.organizer_college && ` (${hackathon.organizer_college})`}
               </span>
             </div>
@@ -385,13 +393,13 @@ export default function HackathonDetail() {
               <div>
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Eligibility</h4>
                 <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  {hackathon.eligibility || 'Open to all students and developers.'}
+                  {hackathon.eligibility || 'Not provided by organizer.'}
                 </p>
               </div>
               <div>
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rules & Guidelines</h4>
                 <p className="text-xs text-slate-600 bg-amber-50/40 p-3 rounded-lg border border-amber-100 whitespace-pre-line">
-                  {hackathon.rules || 'Standard hackathon code of conduct applies.'}
+                  {hackathon.rules || 'Not provided by organizer.'}
                 </p>
               </div>
             </div>
@@ -506,7 +514,7 @@ export default function HackathonDetail() {
                 </div>
               </div>
 
-              {(hackathon.prize_details || hackathon.prize_pool) && (
+              {(hackathon.prize_details || hackathon.prize_pool) ? (
                 <div className="flex items-start space-x-3">
                   <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
                     <Award className="w-4 h-4" />
@@ -515,6 +523,18 @@ export default function HackathonDetail() {
                     <p className="text-xs text-slate-400">Prizes & Bounties</p>
                     <p className="font-semibold text-slate-800">
                       {hackathon.prize_details || hackathon.prize_pool}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 rounded-lg bg-slate-50 text-slate-400">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Prizes & Bounties</p>
+                    <p className="text-slate-500 italic text-xs">
+                      Not provided by organizer.
                     </p>
                   </div>
                 </div>

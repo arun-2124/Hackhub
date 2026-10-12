@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import StatusBadge from '../common/StatusBadge';
-import { Calendar, Users, MapPin, Clock, ArrowRight, ExternalLink, Globe } from 'lucide-react';
+import { Calendar, Users, MapPin, Clock, ArrowRight, ExternalLink, Globe, CheckCircle } from 'lucide-react';
 
 export default function HackathonCard({ hackathon }) {
   const {
@@ -17,7 +17,9 @@ export default function HackathonCard({ hackathon }) {
     status,
     location,
     registered_count,
-    tags
+    tags,
+    external_url,
+    is_verified
   } = hackathon;
 
   const formatDate = (dateStr) => {
@@ -29,12 +31,13 @@ export default function HackathonCard({ hackathon }) {
   const defaultBanner =
     'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80';
 
-  // Parse external source if embedded in description
+  // Parse external source if embedded in description or from database column
   const sourceMatch = description ? description.match(/\[Source:\s*([^\s|]+)\s*\|\s*([^\]]+)\]/) : null;
-  const isExternal = Boolean(sourceMatch);
-  const sourcePlatform = sourceMatch ? sourceMatch[1] : null;
-  const sourceUrl = sourceMatch ? sourceMatch[2] : null;
+  const officialUrl = external_url || (sourceMatch ? sourceMatch[2] : null);
+  const sourcePlatform = sourceMatch ? sourceMatch[1] : (officialUrl ? 'Official Page' : null);
+  const isExternal = Boolean(officialUrl);
   const cleanDescription = description ? description.replace(/\[Source:[^\]]+\]/g, '').trim() : '';
+  const isVerifiedEvent = Boolean(is_verified);
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-200/80 hover:border-indigo-300 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between">
@@ -53,6 +56,12 @@ export default function HackathonCard({ hackathon }) {
 
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">
             <StatusBadge status={status} />
+            {isVerifiedEvent && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-600 text-white rounded-md shadow-xs flex items-center">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Verified
+              </span>
+            )}
             {isExternal ? (
               <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-md shadow-xs flex items-center">
                 <Globe className="w-3 h-3 mr-1" />
@@ -148,9 +157,9 @@ export default function HackathonCard({ hackathon }) {
           >
             View & Register
           </Link>
-          {isExternal && sourceUrl && (
+          {isExternal && officialUrl && (
             <a
-              href={sourceUrl}
+              href={officialUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-indigo-600 transition-colors"

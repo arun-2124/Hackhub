@@ -14,7 +14,7 @@ function formatForMySQL(dateVal) {
  */
 const getAllHackathons = async (req, res, next) => {
   try {
-    const { search, status, tag, page = 1, limit = 10 } = req.query;
+    const { search, status, tag, page = 1, limit = 10, include_all } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
@@ -22,6 +22,12 @@ const getAllHackathons = async (req, res, next) => {
 
     const whereClauses = [];
     const queryParams = [];
+
+    // Isolate public catalog: show only source-verified events by default.
+    // Allow include_all=true or ADMIN role to see all (including synthetic demo records).
+    if (include_all !== 'true' && req.user?.role !== 'ADMIN') {
+      whereClauses.push('h.is_verified = 1');
+    }
 
     if (search) {
       whereClauses.push('(h.title LIKE ? OR h.description LIKE ? OR h.location LIKE ?)');
@@ -64,10 +70,14 @@ const getAllHackathons = async (req, res, next) => {
         h.start_date,
         h.end_date,
         h.registration_deadline,
+        h.submission_deadline,
         h.min_team_size,
         h.max_team_size,
         h.status,
         h.location,
+        h.hackathon_mode,
+        h.external_url,
+        h.is_verified,
         h.created_at,
         COUNT(DISTINCT r.registration_id) AS registered_count,
         GROUP_CONCAT(DISTINCT ht.tag_name ORDER BY ht.tag_name SEPARATOR ', ') AS tags
@@ -245,8 +255,8 @@ const createHackathon = async (req, res, next) => {
         organizer_id, title, description, banner_image, start_date, end_date,
         registration_deadline, submission_deadline, min_team_size, max_team_size,
         status, location, hackathon_mode, eligibility, rules, prize_details,
-        contact_email, external_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UPCOMING', ?, ?, ?, ?, ?, ?, ?)`,
+        contact_email, external_url, is_verified
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UPCOMING', ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.user.user_id,
         title.trim(),
@@ -264,7 +274,8 @@ const createHackathon = async (req, res, next) => {
         rules ? rules.trim() : null,
         prize_details ? prize_details.trim() : null,
         contact_email ? contact_email.trim() : null,
-        external_url ? external_url.trim() : null
+        external_url ? external_url.trim() : null,
+        req.body.is_verified !== undefined ? (req.body.is_verified ? 1 : 0) : 1
       ]
     );
 
@@ -334,7 +345,8 @@ const updateHackathon = async (req, res, next) => {
       rules,
       prize_details,
       contact_email,
-      external_url
+      external_url,
+      is_verified
     } = req.body;
 
     await pool.query(
@@ -355,7 +367,8 @@ const updateHackathon = async (req, res, next) => {
            rules = COALESCE(?, rules),
            prize_details = COALESCE(?, prize_details),
            contact_email = COALESCE(?, contact_email),
-           external_url = COALESCE(?, external_url)
+           external_url = COALESCE(?, external_url),
+           is_verified = COALESCE(?, is_verified)
        WHERE hackathon_id = ?`,
       [
         title || null,
@@ -375,6 +388,7 @@ const updateHackathon = async (req, res, next) => {
         prize_details || null,
         contact_email || null,
         external_url || null,
+        is_verified !== undefined ? (is_verified ? 1 : 0) : null,
         hackathonId
       ]
     );
