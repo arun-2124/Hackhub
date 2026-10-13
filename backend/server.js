@@ -17,20 +17,61 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// CORS Configuration: In production with FRONTEND_URL set, enforce strict allowlist; in development/testing, allow '*'
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
+// CORS Configuration: Enforce strict allowlist in production; allow development/testing fallbacks
+const isProduction = process.env.NODE_ENV === 'production';
+
+const productionOrigins = [
+  'https://hackhub-gamma.vercel.app',
+  'https://hackhub-cfggx2x6l-xibotix-pvt-ltd.vercel.app'
+];
+
+// Helper to validate and parse configured origins (enforces valid HTTPS origins in production)
+function parseConfiguredOrigins(envVar, isProd) {
+  if (!envVar) return [];
+  return envVar
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .filter((origin) => {
+      try {
+        const parsed = new URL(origin);
+        // Origin must strictly match origin root (no paths, query parameters, or fragments)
+        if (parsed.origin !== origin) return false;
+        // In production, require secure HTTPS protocol
+        if (isProd && parsed.protocol !== 'https:') return false;
+        // Never allow wildcard patterns
+        if (origin.includes('*')) return false;
+        return true;
+      } catch (_) {
+        return false;
+      }
+    });
+}
+
+const configuredOrigins = parseConfiguredOrigins(process.env.FRONTEND_URL, isProduction);
+
+const devOrigins = [
   'http://localhost:5173',
   'http://localhost:5000'
-].filter(Boolean);
+];
 
-const corsOptions = process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL
+// In production, allow ONLY the approved Vercel origins and valid explicitly configured FRONTEND_URL.
+// Localhost origins are only included in non-production environments unless explicitly added to FRONTEND_URL.
+const allowedOrigins = Array.from(new Set([
+  ...productionOrigins,
+  ...configuredOrigins,
+  ...(isProduction ? [] : devOrigins)
+]));
+
+const corsOptions = isProduction
   ? {
       origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error(`CORS request blocked by HackHub security policy for origin: ${origin}`));
+          const corsError = new Error(`CORS request blocked by HackHub security policy for origin: ${origin}`);
+          corsError.statusCode = 403;
+          callback(corsError);
         }
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -88,4 +129,4 @@ server.on('error', (err) => {
   }
 });
 
-module.exports = { app, server };
+module.exports = { app, server, allowedOrigins, corsOptions, parseConfiguredOrigins };

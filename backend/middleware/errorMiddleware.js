@@ -17,6 +17,11 @@ const errorHandler = (err, req, res, next) => {
     return errorResponse(res, 400, err.message);
   }
 
+  // Handle CORS security policy errors
+  if (err.message && err.message.includes('CORS request blocked')) {
+    return errorResponse(res, 403, err.message);
+  }
+
   // Handle MySQL duplicate key entry (ER_DUP_ENTRY)
   if (err.code === 'ER_DUP_ENTRY') {
     return errorResponse(res, 409, 'Duplicate entry error: A record with this unique identifier already exists.');
