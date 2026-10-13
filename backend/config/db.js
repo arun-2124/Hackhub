@@ -66,21 +66,40 @@ function getSslConfig() {
       rejectUnauthorized: true
     };
   }
-  // 2. CA certificate file path provided
-  if (process.env.DB_CA_CERT_PATH && fs.existsSync(process.env.DB_CA_CERT_PATH)) {
+
+  // 2. CA certificate file path provided via DB_CA_CERT_PATH (absolute or relative to backend directory)
+  if (process.env.DB_CA_CERT_PATH) {
+    const resolvedCertPath = path.isAbsolute(process.env.DB_CA_CERT_PATH)
+      ? process.env.DB_CA_CERT_PATH
+      : path.resolve(__dirname, '..', process.env.DB_CA_CERT_PATH);
+
+    if (fs.existsSync(resolvedCertPath)) {
+      return {
+        ca: fs.readFileSync(resolvedCertPath, 'utf8'),
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true
+      };
+    }
+  }
+
+  // 3. Auto-detect default bundled CA certificate at backend/certs/isrgrootx1.pem if DB_SSL is requested
+  const defaultCertPath = path.resolve(__dirname, '..', 'certs', 'isrgrootx1.pem');
+  if (process.env.DB_SSL === 'true' && fs.existsSync(defaultCertPath)) {
     return {
-      ca: fs.readFileSync(process.env.DB_CA_CERT_PATH, 'utf8'),
+      ca: fs.readFileSync(defaultCertPath, 'utf8'),
       minVersion: 'TLSv1.2',
       rejectUnauthorized: true
     };
   }
-  // 3. Fallback to system trust store for cloud providers with public root CAs (Let's Encrypt / DigiCert)
+
+  // 4. Fallback to system trust store for cloud providers with public root CAs when DB_SSL=true
   if (process.env.DB_SSL === 'true') {
     return {
       minVersion: 'TLSv1.2',
       rejectUnauthorized: true
     };
   }
+
   return undefined;
 }
 

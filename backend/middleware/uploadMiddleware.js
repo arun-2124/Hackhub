@@ -40,8 +40,9 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Maximum file size: 10 MB
-const maxFileSize = (parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 10) * 1024 * 1024;
+// Maximum file size: default 2 MB if MAX_FILE_SIZE_MB is unset or invalid
+const parsedMaxMb = parseInt(process.env.MAX_FILE_SIZE_MB, 10);
+const maxFileSize = (Number.isInteger(parsedMaxMb) && parsedMaxMb > 0 ? parsedMaxMb : 2) * 1024 * 1024;
 
 const upload = multer({
   storage,

@@ -975,10 +975,10 @@ async function runComprehensiveVerification() {
     );
     fs.unlinkSync(badFilePath);
 
-    // 8d. Reject File Larger than 10MB
-    // Create a 10.5 MB mock file
+    // 8d. Reject File Larger than 2MB
+    // Create a 2.5 MB mock file
     const largeFilePath = path.join(__dirname, 'test_large.pdf');
-    const largeBuffer = Buffer.alloc(10.5 * 1024 * 1024);
+    const largeBuffer = Buffer.alloc(2.5 * 1024 * 1024);
     largeBuffer.write('%PDF-1.4 ');
     fs.writeFileSync(largeFilePath, largeBuffer);
 
@@ -993,7 +993,7 @@ async function runComprehensiveVerification() {
     assert(
       largeUploadRes.status === 400,
       'File Uploads',
-      'File exceeding 10 MB limit strictly rejected with LIMIT_FILE_SIZE error'
+      'File exceeding 2 MB limit strictly rejected with LIMIT_FILE_SIZE error'
     );
     fs.unlinkSync(largeFilePath);
 

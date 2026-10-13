@@ -492,15 +492,15 @@ async function runEndToEndSuite() {
     }), participantToken, true);
     assert(invalidFileRes.statusCode === 400, 'Executable file upload strictly rejected with HTTP 400');
 
-    // 5.5 File Exceeding 10MB Limit
-    const oversizeBuffer = Buffer.alloc(11 * 1024 * 1024, 0); // 11 MB
+    // 5.5 File Exceeding 2MB Limit
+    const oversizeBuffer = Buffer.alloc(2.5 * 1024 * 1024, 0); // 2.5 MB
     const oversizeFileRes = await request('POST', `/ideas/${testIdeaId}/upload`, buildMultipart({}, {
       name: 'file',
       filename: 'massive_presentation.pdf',
       contentType: 'application/pdf',
       content: oversizeBuffer
     }), participantToken, true);
-    assert(oversizeFileRes.statusCode === 400, 'File larger than 10MB strictly rejected with LIMIT_FILE_SIZE (HTTP 400)');
+    assert(oversizeFileRes.statusCode === 400, 'File larger than 2MB strictly rejected with LIMIT_FILE_SIZE (HTTP 400)');
 
     // 5.6 Non-Existent Hackathon ID
     const notFoundH = await request('GET', '/hackathons/999999', null, null);
